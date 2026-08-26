@@ -1,0 +1,60 @@
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@200;400;900&family=Caveat:wght@700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1200px;height:630px;overflow:hidden}
+body{background:#04060A;color:#E8F4FF;font-family:"JetBrains Mono",monospace;position:relative}
+canvas{position:absolute;inset:0}
+.in{position:relative;z-index:2;padding:60px 70px;height:100%;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;align-items:center;justify-content:space-between}
+.w{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:30px;text-transform:uppercase;letter-spacing:.14em}
+.w i{font-style:normal;color:#FF2D78}
+.tag{font-size:12px;letter-spacing:.2em;color:#31404F;text-transform:uppercase;border:1px solid #31404F;padding:8px 14px}
+h1{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:124px;line-height:.84;text-transform:uppercase;letter-spacing:-.01em}
+h1 b{font-weight:900;display:block}
+h1 i{font-style:normal;font-weight:900;display:block;color:#FF2D78;text-shadow:0 0 40px rgba(255,45,120,.55)}
+.judge{border-left:3px solid #FF2D78;padding:6px 0 6px 18px;margin-top:28px;max-width:850px}
+.judge .n{font-size:12px;letter-spacing:.2em;color:#FF2D78;text-transform:uppercase;margin-bottom:6px}
+.judge .b{font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:38px;text-transform:uppercase;line-height:1.08}
+.judge .b em{font-style:normal;font-weight:900;color:#FF2D78}
+.bot{display:flex;align-items:flex-end;justify-content:space-between}
+.bot .l{font-size:15px;color:#5C7086;letter-spacing:.05em;line-height:1.7}
+.bot .l b{color:#E8F4FF;font-weight:400}
+.url{font-size:14px;letter-spacing:.16em;color:#4FD9D9;text-transform:uppercase}
+</style>
+<canvas id="f" width="1200" height="630"></canvas>
+<div class="in">
+  <div class="top">
+    <div class="w">ABOM<i>I</i>NATION</div>
+    <div class="tag">live &middot; room code &middot; no signup</div>
+  </div>
+  <div>
+    <h1><b>confess</b><i>your crimes</i></h1>
+    <div class="judge">
+      <div class="n">the judge</div>
+      <div class="b"><em>@SAM</em> stands alone on boneless wings. Explain yourself.</div>
+    </div>
+  </div>
+  <div class="bot">
+    <div class="l">Everyone confesses in <b>private</b>. A bot reads the room out loud.<br>Then it tells you the one thing you <b>actually agree on</b>.</div>
+    <div class="url">aunysillyme.github.io/abomination</div>
+  </div>
+</div>
+<script>
+var c=document.getElementById("f"),x=c.getContext("2d");
+function r(s){return function(){s=(s*9301+49297)%233280;return s/233280;};}
+var rnd=r(20260825);
+for(var i=0;i<190;i++){
+  var px=rnd()*1200, py=rnd()*630, rr=.4+rnd()*1.5, a=.10+rnd()*.34;
+  x.beginPath();x.arc(px,py,rr,0,6.283);x.fillStyle="rgba(232,244,255,"+a.toFixed(3)+")";x.fill();
+  if(rnd()<.30){
+    var s=rr*3.4,o=.22+rnd()*.3;
+    x.strokeStyle="rgba(255,45,120,"+o.toFixed(3)+")";x.lineWidth=.8;
+    x.beginPath();x.moveTo(px-s,py);x.quadraticCurveTo(px,py-s*.62,px+s,py);
+    x.quadraticCurveTo(px,py+s*.62,px-s,py);x.stroke();
+    x.beginPath();x.arc(px,py,s*.26,0,6.283);x.fillStyle="rgba(255,45,120,"+(o*.8).toFixed(3)+")";x.fill();
+  }
+}
+</script>
