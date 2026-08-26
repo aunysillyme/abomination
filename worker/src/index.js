@@ -15,6 +15,14 @@ const DECK = [
   { t: "Replying k",                s: "one letter, whole war" }
 ];
 
+const GAMES = {
+  snake:  { label: "SNAKE",  low: false, unit: "",    verb: "ate" },
+  nerve:  { label: "NERVE",  low: true,  unit: "s",   verb: "missed ten seconds by" },
+  reflex: { label: "REFLEX", low: true,  unit: "ms",  verb: "reacted in" }
+};
+
+const fmt = (g, v) => (g === "nerve" ? (v / 1000).toFixed(2) : String(Math.round(v))) + GAMES[g].unit;
+
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,OPTIONS",
@@ -36,8 +44,9 @@ export class Room extends DurableObject {
     this.s = null;
     ctx.blockConcurrencyWhile(async () => {
       this.s = (await ctx.storage.get("s")) || {
-        players: [], msgs: [], seq: 0, phase: "lobby", crime: 0
+        players: [], msgs: [], seq: 0, phase: "lobby", crime: 0, scores: {}
       };
+      if (!this.s.scores) this.s.scores = {};
     });
   }
 
@@ -99,6 +108,18 @@ export class Room extends DurableObject {
     this.push("JUDGE", "Minority report: " + min.map((x) => "@" + x).join(", ") + ". Outnumbered " + maj + " to " + min.length + ".", "judge");
   }
 
+  leaderOf(g) {
+    const board = (this.s.scores || {})[g];
+    if (!board) return null;
+    const G = GAMES[g];
+    let best = null;
+    for (const nm of Object.keys(board)) {
+      const v = board[nm];
+      if (!best || (G.low ? v < best.value : v > best.value)) best = { name: nm, value: v };
+    }
+    return best;
+  }
+
   judgeOnConfess(p) {
     let ab = 0;
     for (let i = 0; i < DECK.length; i++) if (p.answers[i] === 1) ab += 1;
@@ -146,7 +167,12 @@ export class Room extends DurableObject {
     }
 
     if (s.phase === "over") {
-      return line("Court is closed. The verdict is on the paper. Take it up with @" + asker + ".");
+      const bits = Object.keys(GAMES).map((g) => {
+        const l = this.leaderOf(g);
+        return l ? GAMES[g].label + ": @" + l.name + " (" + fmt(g, l.value) + ")" : null;
+      }).filter(Boolean);
+      if (bits.length) return line("Standings. " + bits.join(". ") + ".");
+      return line("Court is closed and the arcade is empty. Somebody press something.");
     }
 
     const ci = s.crime;
@@ -191,11 +217,12 @@ export class Room extends DurableObject {
         crime: s.crime,
         seq: s.seq,
         players: s.players.map((p) => {
-          const o = { id: p.id, name: p.name, done: !!p.done, at: p.at || 0 };
+          const o = { id: p.id, name: p.name, done: !!p.done, at: p.at || 0, av: p.av || 0 };
           if (s.phase === "over") o.answers = p.answers || {};
           return o;
         }),
         msgs: s.msgs.filter((m) => m.i > since),
+        scores: s.scores || {},
         reveal: s.phase === "trial" ? this.tally(s.crime) : null
       });
     }
@@ -209,7 +236,10 @@ export class Room extends DurableObject {
       let p = s.players.find((x) => x.name === name);
       if (!p) {
         if (s.players.length >= 12) return json({ error: "room is full" }, 400);
-        p = { id: crypto.randomUUID().slice(0, 8), name, answers: {}, done: false, at: 0 };
+        const taken = s.players.map((x) => x.av);
+        let av = Math.floor(Math.random() * 24);
+        for (let k = 0; k < 24 && taken.indexOf(av) >= 0; k++) av = (av + 1) % 24;
+        p = { id: crypto.randomUUID().slice(0, 8), name, answers: {}, done: false, at: 0, av };
         s.players.push(p);
         this.push("SYS", name + " entered the room", "sys");
         if (s.players.length === 1) {
@@ -268,7 +298,7 @@ export class Room extends DurableObject {
       if (s.phase !== "trial") return json({ ok: true });
       if (s.crime >= DECK.length - 1) {
         s.phase = "over";
-        this.push("JUDGE", "Twelve crimes. Court adjourned. Now go look at what you actually have in common.", "judge");
+        this.push("JUDGE", "Twelve crimes. Court adjourned. Read your verdict, then settle it in the arcade.", "judge");
       } else {
         s.crime += 1;
         this.judgeOnReveal(s.crime);
@@ -277,8 +307,36 @@ export class Room extends DurableObject {
       return json({ ok: true, phase: s.phase, crime: s.crime });
     }
 
+    if (act === "score") {
+      const p = this.p(clean(b.id, 40));
+      if (!p) return json({ error: "not in room" }, 403);
+      const g = clean(b.game, 12);
+      if (!GAMES[g]) return json({ error: "unknown game" }, 400);
+      const v = Number(b.value);
+      if (!isFinite(v) || v < 0 || v > 3600000) return json({ error: "bad score" }, 400);
+
+      if (!s.scores) s.scores = {};
+      if (!s.scores[g]) s.scores[g] = {};
+      const board = s.scores[g], G = GAMES[g];
+      const prevLeader = this.leaderOf(g);
+      const old = board[p.name];
+      const better = old === undefined || (G.low ? v < old : v > old);
+      if (better) board[p.name] = v;
+
+      if (better) {
+        const leader = this.leaderOf(g);
+        if (leader && leader.name === p.name && (!prevLeader || prevLeader.name !== p.name)) {
+          this.push("JUDGE", "@" + p.name + " " + G.verb + " " + fmt(g, v) + " and takes " + G.label + ".", "judge");
+        } else if (!old) {
+          this.push("SYS", p.name + " " + G.verb + " " + fmt(g, v) + " in " + G.label.toLowerCase(), "sys");
+        }
+      }
+      await this.save();
+      return json({ ok: true, best: board[p.name], board });
+    }
+
     if (act === "reset") {
-      this.s = { players: [], msgs: [], seq: 0, phase: "lobby", crime: 0 };
+      this.s = { players: [], msgs: [], seq: 0, phase: "lobby", crime: 0, scores: {} };
       await this.save();
       return json({ ok: true });
     }
