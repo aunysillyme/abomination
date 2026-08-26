@@ -840,7 +840,7 @@ var SN=null;
 function stopSnake(){ if(SN&&SN.t){clearInterval(SN.t);SN.t=null;} }
 function startSnake(){
   var cv=$("snakeCv"), c=cv.getContext("2d"), N=17, px=cv.width/N;
-  SN={g:[{x:8,y:8}],d:{x:1,y:0},nd:{x:1,y:0},f:{x:12,y:8},s:0,t:null,dead:false};
+  SN={g:[{x:8,y:8}],d:{x:1,y:0},nd:{x:1,y:0},f:{x:12,y:8},s:0,t:null,dead:false,live:false};
   function food(){
     var ok=false,p;
     while(!ok){p={x:(Math.random()*N)|0,y:(Math.random()*N)|0};
@@ -849,6 +849,7 @@ function startSnake(){
   }
   food();
   function step(){
+    if(!SN.live)return;
     SN.d=SN.nd;
     var h={x:SN.g[0].x+SN.d.x,y:SN.g[0].y+SN.d.y};
     if(h.x<0||h.y<0||h.x>=N||h.y>=N||SN.g.some(function(q){return q.x===h.x&&q.y===h.y;})){
@@ -868,6 +869,16 @@ function startSnake(){
     else SN.g.pop();
     draw();
   }
+  function ready(){
+    if(SN.live)return;
+    c.fillStyle="rgba(4,6,10,.72)";c.fillRect(0,0,cv.width,cv.height);
+    c.textAlign="center";
+    c.fillStyle="#4FD9D9";c.font="900 24px 'Big Shoulders Display',sans-serif";
+    c.fillText("READY",cv.width/2,cv.height/2-4);
+    c.fillStyle="#5C7086";c.font="11px 'JetBrains Mono',monospace";
+    c.fillText("arrow, wasd or swipe to start",cv.width/2,cv.height/2+18);
+  }
+  SN.ready=ready;
   function draw(){
     c.clearRect(0,0,cv.width,cv.height);
     c.strokeStyle="rgba(255,45,120,.85)";c.lineWidth=1.4;
@@ -882,11 +893,13 @@ function startSnake(){
     });
   }
   draw();
+  ready();
   $("gScore").textContent="0";
   SN.t=setInterval(step,118);
 }
 function turn(x,y){
   if(!SN||SN.dead)return;
+  if(!SN.live){SN.live=true;SN.d={x:x,y:y};SN.nd={x:x,y:y};return;}
   if(SN.d.x===-x&&SN.d.y===-y)return;
   SN.nd={x:x,y:y};
 }
