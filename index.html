@@ -54,7 +54,15 @@ body{color:var(--line);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace
 .scrawl{font-family:Caveat,cursive;font-weight:700}
 
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:30px;flex-wrap:wrap}
-.brand .w{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:27px;text-transform:uppercase;letter-spacing:.12em}
+.brand .w{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:27px;
+  text-transform:uppercase;letter-spacing:.12em;background:transparent;border:0;padding:0;
+  color:var(--line);cursor:pointer;display:flex;align-items:baseline;gap:9px}
+.brand .w:hover{color:var(--neon)}
+.brand .w:hover i{color:var(--line)}
+.brand .w .home{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--dimmer);opacity:0;transition:opacity .18s}
+.brand .w:hover .home{opacity:1;color:var(--neon)}
+@media(max-width:560px){.brand .w .home{display:none}}
 .brand .w i{font-style:normal;color:var(--neon);text-shadow:0 0 16px rgba(255,45,120,.6)}
 .tag{font-size:10.5px;letter-spacing:.2em;color:var(--dimmer);text-transform:uppercase;border:1px solid var(--dimmer);padding:5px 10px;white-space:nowrap}
 
@@ -343,7 +351,7 @@ button.arcade:hover small{color:var(--steel)}
 <div class="col" id="gamecol">
 
   <div class="brand">
-    <div class="w">ABOM<i>I</i>NATION</div>
+    <button class="w" id="home" title="back to the start">ABOM<i>I</i>NATION<span class="home">&#8592; start over</span></button>
     <div class="tag" id="brandTag">an icebreaker that starts with an argument</div>
   </div>
 
@@ -430,7 +438,10 @@ button.arcade:hover small{color:var(--steel)}
       <div class="board" id="board"></div>
       <div class="gnote">Your best score per game is what sticks. Everyone sees the board update live.</div>
     </div>
-    <div class="stack"><button class="ghost" id="backPaper">back to the verdict</button></div>
+    <div class="stack">
+      <button class="ghost" id="backPaper">back to the verdict</button>
+      <button class="ghost" id="home3">back to the start</button>
+    </div>
   </div>
 
 </div>
@@ -457,6 +468,10 @@ button.arcade:hover small{color:var(--steel)}
 <div id="presence"></div>
 
 <div class="sheet paperwrap" id="paperSheet">
+  <div class="brand">
+    <button class="w" id="home2" title="back to the start">ABOM<i>I</i>NATION<span class="home">&#8592; start over</span></button>
+    <div class="tag" id="vTag">the verdict</div>
+  </div>
   <h1 class="ph">the<i>verdict</i></h1>
   <p class="psub" id="psub">what twelve arguments actually told you</p>
   <div id="cards"></div>
@@ -778,6 +793,22 @@ function toVerdict(d){
   };
 }
 $("again").addEventListener("click",function(){location.hash="";location.reload();});
+
+/* the way back. the room code survives, so re-entering puts you back where you were. */
+function goHome(){
+  stopSnake();
+  document.body.classList.remove("paper");
+  FIELD.mode="calm";
+  showChat(false);
+  show(0);
+  $("brandTag").textContent="an icebreaker that starts with an argument";
+  if(ME.room)$("rc").value=ME.room;
+  if(ME.name)$("nm").value=ME.name;
+  try{$("shareNow").textContent=inviteUrl().replace(/^https?:\/\//,"");}catch(e){}
+}
+["home","home2","home3"].forEach(function(id){
+  var el=$(id); if(el)el.addEventListener("click",goHome);
+});
 </script>
 <script>
 /* ================= FACES =================
