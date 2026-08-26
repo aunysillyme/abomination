@@ -185,8 +185,9 @@ body{overflow-y:auto}
 .pl .st.done{color:var(--toxic)}
 
 /* chat */
-.chat{display:flex;flex-direction:column;height:min(74vh,600px);border:1px solid var(--dimmer);position:sticky;top:20px}
-@media(max-width:920px){.chat{position:static;height:56vh}}
+.chat{display:flex;flex-direction:column;height:min(56vh,470px);border:1px solid var(--dimmer)}
+#chatcol{position:sticky;top:20px}
+@media(max-width:920px){#chatcol{position:static}.chat{height:56vh}}
 .chead{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--dimmer);flex:none}
 .chead .t{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dimmer)}
 .chead .live{margin-left:auto;font-size:9px;letter-spacing:.16em;color:var(--toxic);text-transform:uppercase;display:flex;align-items:center;gap:6px}
@@ -253,27 +254,28 @@ body.paper canvas#field{display:none}
 @media(max-width:520px){.rstat{width:58px;font-size:8.5px}.rstat em{font-size:21px}}
 .paperwrap{padding-bottom:190px}
 /* --- arcade standings: the whole room, all three games --- */
-.standings{margin-top:22px;border:1px solid var(--dimmer);padding:16px}
-.standings h4{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;
+.standings{margin-top:14px;border:1px solid var(--dimmer);padding:14px;display:none}
+.standings.on{display:block}
+.standings h4{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:17px;
   text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin:0 0 3px}
 .standings .sn{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
   color:var(--dimmer);margin-bottom:14px}
-.sgrid{display:grid;grid-template-columns:26px 1fr repeat(3,58px) 46px;gap:8px;align-items:center}
-@media(max-width:560px){.sgrid{grid-template-columns:20px 1fr repeat(3,46px) 38px;gap:5px}}
+.sgrid{display:grid;grid-template-columns:22px minmax(0,1fr) repeat(3,50px) 36px;gap:6px;align-items:center}
+@media(max-width:560px){.sgrid{grid-template-columns:20px minmax(0,1fr) repeat(3,44px) 32px;gap:5px}}
 .shead{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);
   text-align:right;padding-bottom:8px;border-bottom:1px solid rgba(49,64,79,.5)}
 .shead.l{text-align:left}
 .srow{display:contents}
 .srow .c{padding:9px 0;border-bottom:1px solid rgba(49,64,79,.3);font-size:13px;text-align:right}
 .srow .c.l{text-align:left;display:flex;align-items:center;gap:9px;min-width:0}
-.srow .c.l b{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;
+.srow .c.l b{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:17px;
   text-transform:uppercase;letter-spacing:.03em;color:var(--line);
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .srow .rk{font-size:11px;color:var(--dimmer);text-align:center}
-.srow .c.v{color:var(--dim);font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:17px}
+.srow .c.v{color:var(--dim);font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:15px}
 .srow .c.v.win{color:var(--toxic);text-shadow:0 0 12px rgba(79,255,168,.4)}
 .srow .c.v.none{color:var(--dimmer);font-size:13px}
-.srow .c.pts{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:21px;color:var(--teal)}
+.srow .c.pts{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;color:var(--teal)}
 .srow.lead .c.l b{color:var(--teal);text-shadow:0 0 14px rgba(79,217,217,.45)}
 .srow.me .c.l b{color:var(--neon)}
 .srow.me .c.pts{color:var(--neon)}
@@ -505,7 +507,6 @@ button.arcade:hover small{color:var(--steel)}
       <div class="board" id="board"></div>
       <div class="gnote">Your best score per game is what sticks. Everyone sees the board update live.</div>
     </div>
-    <div class="standings" id="standings"></div>
     <div class="stack">
       <button class="ghost" id="backPaper">back to the verdict</button>
       <button class="ghost" id="home3">back to the start</button>
@@ -528,6 +529,7 @@ button.arcade:hover small{color:var(--steel)}
       <button id="csend">send</button>
     </div>
   </div>
+  <div class="standings" id="standings"></div>
 </div>
 
 </div>
@@ -1034,11 +1036,8 @@ function drawStandings(){
   });
 
   var who=Object.keys(names);
-  if(!who.length){
-    host.innerHTML='<h4>arcade standings</h4><div class="sn">the whole room, all three games</div>'+
-      '<div class="sempty">Nothing on the board yet. Somebody play something.</div>';
-    return;
-  }
+  if(!who.length){host.classList.remove("on");host.innerHTML="";return;}
+  host.classList.add("on");
   who.sort(function(a,b){return (pts[b]||0)-(pts[a]||0)||a.localeCompare(b);});
   var top=pts[who[0]]||0;
 
