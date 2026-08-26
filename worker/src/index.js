@@ -99,6 +99,29 @@ export class Room extends DurableObject {
     this.push("JUDGE", "Minority report: " + min.map((x) => "@" + x).join(", ") + ". Outnumbered " + maj + " to " + min.length + ".", "judge");
   }
 
+  judgeOnConfess(p) {
+    let ab = 0;
+    for (let i = 0; i < DECK.length; i++) if (p.answers[i] === 1) ab += 1;
+    const n = DECK.length;
+    const at = "@" + p.name + " ";
+    let verdict;
+    if (ab === n) verdict = at + "called all twelve an abomination. Nothing on earth is safe from this person.";
+    else if (ab === 0) verdict = at + "objected to nothing. Either a saint or has never tasted anything.";
+    else if (ab >= n - 2) verdict = at + "objected to " + ab + " of " + n + ". A genuinely difficult person.";
+    else if (ab >= 8) verdict = at + "objected to " + ab + ". Hostile, but has standards.";
+    else if (ab >= 5) verdict = at + "objected to " + ab + " of " + n + ". Dangerously reasonable.";
+    else if (ab >= 3) verdict = at + "only objected to " + ab + " things. Easygoing. Suspicious.";
+    else verdict = at + "objected to " + ab + ". This person will eat literally anything.";
+    this.push("JUDGE", verdict, "judge");
+
+    const ready = this.s.players.filter((x) => x.done).length;
+    if (ready === 1 && this.s.players.length < 2) {
+      this.push("JUDGE", "Nobody else is here to be wrong at. Send them the room code.", "judge");
+    } else if (ready >= 2 && this.s.players.every((x) => x.done)) {
+      this.push("JUDGE", "That is everyone. Begin the trial when you are ready to lose friends.", "judge");
+    }
+  }
+
   judgeReply(asker, text) {
     const s = this.s;
     const low = text.toLowerCase();
@@ -106,8 +129,20 @@ export class Room extends DurableObject {
 
     if (s.phase === "lobby") {
       const waiting = s.players.filter((p) => !p.done).map((p) => p.name);
-      if (waiting.length) return line("Still confessing: " + waiting.map((x) => "@" + x).join(", ") + ". Pressure them.");
-      return line("Everyone has confessed. Someone press begin.");
+      const ready = s.players.filter((p) => p.done).length;
+      if (ready < 2) {
+        if (s.players.length < 2) {
+          return line("You are alone in here. A trial needs someone to disagree with. Send them the code.");
+        }
+        if (waiting.length) {
+          return line("Still confessing: " + waiting.map((x) => "@" + x).join(", ") + ". Nothing starts until they finish.");
+        }
+        return line("One confession is not a trial. Get one more in here.");
+      }
+      if (waiting.length) {
+        return line("Still confessing: " + waiting.map((x) => "@" + x).join(", ") + ". Start without them if you are cruel.");
+      }
+      return line("Everyone has confessed. Someone press begin the trial.");
     }
 
     if (s.phase === "over") {
@@ -196,6 +231,7 @@ export class Room extends DurableObject {
       if (p.at >= DECK.length && !p.done) {
         p.done = true;
         this.push("SYS", p.name + " has confessed to all twelve", "sys");
+        this.judgeOnConfess(p);
       }
       await this.save();
       return json({ ok: true, done: p.done });
