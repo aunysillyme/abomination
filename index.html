@@ -234,6 +234,13 @@ body.paper canvas#field{display:none}
 .ahead i{font-style:normal;font-weight:900;display:block;color:var(--teal);text-shadow:0 0 26px rgba(79,217,217,.45)}
 .asub{color:var(--dim);font-size:14px;line-height:1.7;margin:0 0 24px;max-width:48ch}
 
+.lockbox{border:1px solid var(--dimmer);padding:14px 16px;margin:6px 0 4px}
+.lockrow{display:flex;align-items:center;gap:11px;padding:8px 0;font-size:14px;
+  color:var(--dimmer);border-bottom:1px solid rgba(49,64,79,.4);letter-spacing:.03em}
+.lockrow:last-child{border-bottom:0}
+.lockrow .lk{color:var(--neon);font-size:13px;width:14px}
+.lockrow.ok{color:var(--dim)}
+.lockrow.ok .lk{color:var(--toxic)}
 .games{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
 @media(max-width:560px){.games{grid-template-columns:1fr}}
 button.gt{font-family:inherit;text-align:left;background:transparent;border:1px solid var(--dimmer);color:var(--dim);padding:13px 14px;cursor:pointer;display:block}
@@ -419,6 +426,21 @@ button.arcade:hover small{color:var(--steel)}
     <button class="go" id="rNext">next crime</button>
   </div>
 
+  <!-- 5 . locked out -->
+  <div class="screen" id="s5">
+    <div class="lbl" style="margin-top:0">access denied</div>
+    <h2 class="ahead">you never<i>confessed</i></h2>
+    <p class="asub">The verdict is built out of what people were willing to admit. You watched twelve arguments and put nothing on the record, so there is nothing in there about you.</p>
+    <div class="lockbox">
+      <div class="lockrow"><span class="lk">&#10007;</span>the verdict</div>
+      <div class="lockrow"><span class="lk">&#10007;</span>the arcade</div>
+      <div class="lockrow ok"><span class="lk">&#10003;</span>the chat, where everyone can see you did not</div>
+    </div>
+    <button class="go" id="lateConfess">confess now and unlock it</button>
+    <div class="note">Twelve questions, about a minute. Late confessions still count toward the verdict.</div>
+    <div class="stack"><button class="ghost" id="home4">back to the start</button></div>
+  </div>
+
   <!-- 4 . the arcade -->
   <div class="screen" id="s4">
     <div class="lbl" style="margin-top:0">the arcade</div>
@@ -492,10 +514,11 @@ function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return
 
 var DECK=[], ME={id:null,name:null,room:null}, ANS={}, QI=0;
 var SEEN=0, POLL=null, LAST={phase:"lobby",crime:0,players:[]}, DEMO=false;
+var LOCKED=false, OVERSTATE=null;
 
 /* ---------------- screens ---------------- */
 function show(n){
-  ["s0","s1","s2","s3","s4"].forEach(function(id,i){
+  ["s0","s1","s2","s3","s4","s5"].forEach(function(id,i){
     $(id).className="screen"+(i===n?" on":"");
   });
   window.scrollTo(0,0);
@@ -579,6 +602,8 @@ function paint(d){
   var prevPhase=LAST.phase, prevCrime=LAST.crime;
   LAST=d;
 
+  var mine=(d.players||[]).filter(function(q){return q.id===ME.id;})[0];
+  ME.done=mine?!!mine.done:false;
   if(d.scores){SCORES=d.scores;if(GCUR){drawBoard(GCUR);drawTiles();}}
   drawPresence(d.players);
 
@@ -630,7 +655,19 @@ function paint(d){
     if(prevPhase!=="trial"||prevCrime!==d.crime||$("s3").className.indexOf("on")<0)drawR(d);
     if($("s3").className.indexOf("on")<0)show(3);
   }else if(d.phase==="over"){
-    if(prevPhase!=="over"){clearInterval(POLL);toVerdict(d);}
+    OVERSTATE=d;
+    if(ME.id&&!ME.done){
+      if(!LOCKED){
+        LOCKED=true;
+        document.body.classList.remove("paper");
+        FIELD.mode="watch";FIELD.intensity=.5;
+        showChat(true);show(5);
+      }
+    }else if(prevPhase!=="over"||LOCKED){
+      LOCKED=false;
+      if(POLL){clearInterval(POLL);POLL=null;}
+      toVerdict(d);
+    }
   }
 }
 
@@ -658,6 +695,7 @@ $("chips").addEventListener("click",function(e){
 
 /* ---------------- the confession ---------------- */
 $("toConfess").addEventListener("click",function(){QI=0;drawQ();show(2);});
+$("lateConfess").addEventListener("click",function(){QI=0;drawQ();show(2);});
 function drawQ(){
   var d=DECK[QI];if(!d)return;
   $("qCount").textContent="crime "+(QI+1)+" of "+DECK.length;
@@ -668,8 +706,16 @@ function drawQ(){
 function answer(v){
   ANS[QI]=v;QI++;
   if(QI>=DECK.length){
-    post("confess",{id:ME.id,answers:ANS}).then(function(){pull();});
-    show(1);return;
+    var wasLocked=LOCKED;
+    post("confess",{id:ME.id,answers:ANS}).then(function(r){
+      ME.done=!!(r&&r.done);
+      if(wasLocked&&ME.done&&OVERSTATE){
+        LOCKED=false;
+        OVERSTATE.players.forEach(function(q){if(q.id===ME.id){q.answers=ANS;q.done=true;}});
+        toVerdict(OVERSTATE);
+      }else pull();
+    });
+    show(wasLocked?5:1);return;
   }
   post("confess",{id:ME.id,answers:ANS});
   drawQ();
@@ -806,7 +852,7 @@ function goHome(){
   if(ME.name)$("nm").value=ME.name;
   try{$("shareNow").textContent=inviteUrl().replace(/^https?:\/\//,"");}catch(e){}
 }
-["home","home2","home3"].forEach(function(id){
+["home","home2","home3","home4"].forEach(function(id){
   var el=$(id); if(el)el.addEventListener("click",goHome);
 });
 </script>
@@ -1082,14 +1128,24 @@ $("games").addEventListener("click",function(ev){
   openGame(b.dataset.g);
 });
 $("toArcade").addEventListener("click",function(){
+  if(!gateOk())return;
   document.body.classList.remove("paper");
   FIELD.mode="watch";FIELD.intensity=.42;
   showChat(true);show(4);
   drawTiles();if(!GCUR)openGame("snake");
   if(!POLL)startPoll();
 });
+function gateOk(){
+  if(DEMO||!ME.id)return true;
+  if(ME.done)return true;
+  LOCKED=true;document.body.classList.remove("paper");
+  FIELD.mode="watch";FIELD.intensity=.5;showChat(true);show(5);
+  return false;
+}
 $("backPaper").addEventListener("click",function(){
-  stopSnake();document.body.classList.add("paper");FIELD.mode="calm";
+  stopSnake();
+  if(!gateOk())return;
+  document.body.classList.add("paper");FIELD.mode="calm";
 });
 drawTiles();
 </script>
