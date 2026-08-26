@@ -1,0 +1,717 @@
+<title>Abomination</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="A live party game. Everyone confesses their food crimes in private, then a bot reads the room out loud and you argue about it in the chat.">
+<meta name="theme-color" content="#04060A">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Abomination">
+<meta property="og:title" content="Abomination &middot; the icebreaker that starts with an argument">
+<meta property="og:description" content="Everyone joins a room on their own phone, confesses twelve food crimes in private, then a bot reads the room out loud. Argue in the chat.">
+<meta property="og:url" content="https://aunysillyme.github.io/abomination/">
+<meta property="og:image" content="https://aunysillyme.github.io/abomination/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Abomination &middot; the icebreaker that starts with an argument">
+<meta name="twitter:description" content="Everyone joins on their own phone, confesses twelve food crimes in private, then a bot reads the room out loud.">
+<meta name="twitter:image" content="https://aunysillyme.github.io/abomination/og.png">
+<link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJz48dGV4dCB5PScuOTJlbScgZm9udC1zaXplPSc5Mic+8J+RgTwvdGV4dD48L3N2Zz4=">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@200;400;700;900&family=Caveat:wght@500;700&family=JetBrains+Mono:wght@400;700&display=swap">
+<style>
+/* ABOMINATION
+   Negative Space is the ground: pure void, form drawn only by luminous contour.
+   Schitzo is the reckoning: cold palette, one neon intrusion, the interface watches.
+   Sketchy is the verdict: the screen flips to bright white paper, hand-scrawled.
+   Cold void -> being seen -> warm paper. The medium performs the arc. */
+:root{
+  --void:#04060A;
+  --line:#E8F4FF;          /* the light that draws everything */
+  --dim:#5C7086;
+  --dimmer:#31404F;
+  --steel:#7FA6C4;         /* schitzo cold */
+  --teal:#4FD9D9;
+  --neon:#FF2D78;          /* the intrusion. one per screen, never the base */
+  --toxic:#4FFFA8;
+  --paper:#F7F3E9;         /* sketchy */
+  --ink:#171A1F;
+  --pen:#2B49C9;
+  --marker:#E0357B;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--void)}
+body{color:var(--line);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace;font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+#field{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:2;min-height:100vh}
+.sheet{max-width:680px;margin:0 auto;padding:26px 20px 120px}
+
+/* --- the glowing-contour vocabulary --- */
+.glow{text-shadow:0 0 14px rgba(232,244,255,.55),0 0 40px rgba(127,166,196,.25)}
+.hair{border:1px solid var(--dimmer);background:transparent}
+.disp{font-family:"Big Shoulders Display",Impact,sans-serif;text-transform:uppercase;line-height:.9;letter-spacing:.01em}
+.thin{font-weight:200}
+.scrawl{font-family:Caveat,cursive;font-weight:700}
+
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:30px;flex-wrap:wrap}
+.brand .w{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:27px;text-transform:uppercase;letter-spacing:.12em}
+.brand .w i{font-style:normal;color:var(--neon);text-shadow:0 0 16px rgba(255,45,120,.6)}
+.tag{font-size:9.5px;letter-spacing:.2em;color:var(--dimmer);text-transform:uppercase;border:1px solid var(--dimmer);padding:5px 10px;white-space:nowrap}
+
+.screen{display:none}.screen.on{display:block}
+
+.hero{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:clamp(52px,15vw,116px);text-transform:uppercase;line-height:.86;margin:0 0 20px;letter-spacing:-.01em}
+.hero b{font-weight:900;display:block;color:var(--line)}
+.hero i{font-style:normal;font-weight:900;display:block;color:var(--neon);text-shadow:0 0 26px rgba(255,45,120,.5)}
+.lede{color:var(--dim);font-size:13.5px;line-height:1.75;margin:0 0 28px;max-width:46ch}
+.lede b{color:var(--line);font-weight:400}
+
+.lbl{font-size:9.5px;letter-spacing:.22em;color:var(--dimmer);margin:26px 0 10px;text-transform:uppercase}
+input.t{width:100%;font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:24px;text-transform:uppercase;letter-spacing:.03em;color:var(--line);background:transparent;border:0;border-bottom:1px solid var(--dimmer);padding:6px 2px;outline:none}
+input.t:focus{border-bottom-color:var(--neon)}
+input.t::placeholder{color:var(--dimmer);text-transform:none;font-size:15px;letter-spacing:0}
+.row{display:grid;grid-template-columns:22px 1fr 32px;gap:10px;align-items:center;margin-bottom:12px}
+.row .n{font-size:10px;color:var(--dimmer);text-align:right}
+.row button.x{height:32px;background:transparent;border:1px solid var(--dimmer);color:var(--dimmer);font-family:inherit;cursor:pointer}
+.row button.x:hover{color:var(--neon);border-color:var(--neon)}
+button.add{font-family:inherit;font-size:10px;letter-spacing:.16em;padding:9px 14px;background:transparent;border:1px dashed var(--dimmer);color:var(--dim);cursor:pointer;text-transform:uppercase}
+button.add:hover{border-style:solid;color:var(--line)}
+
+button.go{
+  font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:26px;text-transform:uppercase;letter-spacing:.04em;
+  padding:15px 24px;width:100%;margin-top:30px;background:transparent;border:1px solid var(--line);color:var(--line);cursor:pointer;
+  box-shadow:0 0 24px rgba(232,244,255,.13),inset 0 0 24px rgba(232,244,255,.05);
+}
+button.go:hover{border-color:var(--neon);color:var(--neon);box-shadow:0 0 30px rgba(255,45,120,.3),inset 0 0 30px rgba(255,45,120,.08)}
+button.ghost{font-family:inherit;font-size:10px;letter-spacing:.16em;text-transform:uppercase;padding:10px 15px;background:transparent;border:1px solid var(--dimmer);color:var(--dim);cursor:pointer}
+button.ghost:hover{color:var(--line);border-color:var(--dim)}
+.err{color:var(--neon);font-size:12px;min-height:16px;margin-top:12px}
+.stack{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}
+
+/* handoff: one name, alone, in the void */
+.hand{text-align:center;padding-top:14vh}
+.hand .who{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:clamp(52px,16vw,104px);text-transform:uppercase;margin:20px 0 14px;line-height:.9;
+  text-shadow:0 0 30px rgba(232,244,255,.4)}
+.hand p{color:var(--dim);max-width:380px;margin:0 auto 32px;line-height:1.8;font-size:13px}
+
+/* the interview */
+.qwrap{text-align:center;padding-top:5vh}
+.count{font-size:9.5px;letter-spacing:.24em;color:var(--dimmer);text-transform:uppercase}
+.bar{height:1px;background:var(--dimmer);margin:14px 0 44px;position:relative}
+.bar i{display:block;height:1px;background:var(--line);box-shadow:0 0 10px rgba(232,244,255,.8);transition:width .3s}
+.item{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:clamp(42px,12vw,86px);text-transform:uppercase;line-height:.9;margin:0 0 10px;min-height:1.9em;display:flex;align-items:center;justify-content:center;
+  text-shadow:0 0 28px rgba(232,244,255,.32)}
+.sub{color:var(--dimmer);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:44px;min-height:1.3em}
+.picks{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.picks button{
+  font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:clamp(17px,4.6vw,25px);text-transform:uppercase;letter-spacing:.03em;
+  padding:30px 8px;border:1px solid var(--dimmer);background:transparent;color:var(--dim);cursor:pointer;line-height:1.05;
+}
+.picks button.fine:hover{border-color:var(--toxic);color:var(--toxic);box-shadow:0 0 26px rgba(79,255,168,.2)}
+.picks button.ab:hover{border-color:var(--neon);color:var(--neon);box-shadow:0 0 26px rgba(255,45,120,.25)}
+
+/* the reckoning: schitzo. the interface starts watching. */
+.intrusion{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:11px;letter-spacing:.4em;text-transform:uppercase;color:var(--neon);text-shadow:0 0 18px rgba(255,45,120,.7);margin-bottom:14px;min-height:1.2em}
+.crime{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:clamp(40px,11vw,80px);text-transform:uppercase;line-height:.9;margin:0 0 26px;text-shadow:0 0 26px rgba(232,244,255,.3)}
+.tally{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.side{border:1px solid var(--dimmer);padding:16px;background:transparent}
+.side.ab{border-color:var(--neon);box-shadow:inset 0 0 30px rgba(255,45,120,.07)}
+.side.fine{border-color:var(--toxic);box-shadow:inset 0 0 30px rgba(79,255,168,.06)}
+.side h3{font-family:"Big Shoulders Display",sans-serif;font-weight:700;font-size:12px;letter-spacing:.18em;margin:0 0 6px;text-transform:uppercase}
+.side.ab h3{color:var(--neon)}.side.fine h3{color:var(--toxic)}
+.side .num{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:54px;line-height:.9}
+.side .who{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.7;word-break:break-word;letter-spacing:.04em}
+.burn{border:1px solid var(--dimmer);border-left:2px solid var(--neon);padding:14px 16px;color:var(--line);font-size:13.5px;line-height:1.65;margin-bottom:16px;background:transparent}
+.burn b{color:var(--neon)}
+.internet{font-size:10.5px;color:var(--dimmer);letter-spacing:.08em;margin-bottom:26px}
+.internet b{color:var(--steel)}
+
+/* the verdict: sketchy. the void flips to paper. */
+body.paper{background:var(--paper)}
+body.paper #field{opacity:0}
+.paperwrap{display:none}
+body.paper .paperwrap{display:block}
+.paperwrap{color:var(--ink);font-family:Caveat,cursive}
+.paperwrap .ph{font-family:"Big Shoulders Display",sans-serif;font-weight:900;text-transform:uppercase;font-size:clamp(46px,13vw,92px);line-height:.85;margin:0 0 4px;color:var(--ink)}
+.paperwrap .ph i{font-style:normal;color:var(--marker);display:block}
+.paperwrap .psub{font-family:Caveat,cursive;font-weight:500;font-size:22px;color:#5B6472;margin:0 0 30px;transform:rotate(-1.2deg)}
+.pcard{position:relative;margin-bottom:26px;padding:20px 20px 22px}
+.pcard svg.frame{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pcard .ct{font-family:"JetBrains Mono",monospace;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:#7C8798;margin-bottom:6px}
+.pcard .cn{font-family:"Big Shoulders Display",sans-serif;font-weight:900;text-transform:uppercase;font-size:clamp(30px,8vw,52px);line-height:.9;margin-bottom:8px}
+.pcard .cd{font-family:Caveat,cursive;font-weight:500;font-size:21px;line-height:1.4;color:#3B434F}
+.pcard .cd b{color:var(--ink)}
+.pc1 .cn{color:var(--marker)} .pc2 .cn{color:var(--pen)}
+.pc3 .cn{color:#1F8A4C} .pc4 .cn{color:#C4761B}
+.doodle{position:absolute;font-family:Caveat,cursive;font-weight:700;font-size:19px;color:var(--marker);white-space:nowrap}
+.paperwrap .foot{font-family:"JetBrains Mono",monospace;font-size:11px;color:#7C8798;line-height:1.7;margin-top:22px}
+.paperwrap .foot a{color:var(--marker)}
+.paperwrap button.ghost{border-color:#B9B0A0;color:#5B6472}
+.paperwrap button.ghost:hover{border-color:var(--ink);color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+<style>
+/* --- LIVE ROOM LAYER: lobby, chat, the judge --- */
+body{overflow-y:auto}
+.stage{max-width:1120px;margin:0 auto;padding:24px 18px 90px;display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:26px;align-items:start}
+.stage.solo{grid-template-columns:minmax(0,1fr);max-width:680px}
+@media(max-width:920px){.stage{grid-template-columns:minmax(0,1fr);gap:18px}}
+.col{min-width:0}
+
+.code{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(44px,10vw,72px);letter-spacing:.16em;color:var(--teal);text-shadow:0 0 30px rgba(79,217,217,.45);line-height:1;margin:4px 0 2px;word-break:break-all}
+.codehint{font-size:10px;letter-spacing:.14em;color:var(--dimmer);text-transform:uppercase;margin-bottom:8px}
+.codehint b{color:var(--steel)}
+
+.lobby{border:1px solid var(--dimmer);padding:13px 15px;margin:8px 0 4px}
+.lobby h4{font-size:9.5px;letter-spacing:.22em;color:var(--dimmer);text-transform:uppercase;margin:0 0 11px;font-weight:400;font-family:inherit}
+.pl{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(49,64,79,.4);font-size:13px;letter-spacing:.04em}
+.pl:last-child{border-bottom:0}
+.pl.me{color:var(--teal)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--dimmer);flex:none}
+.dot.on{background:var(--toxic);box-shadow:0 0 9px var(--toxic)}
+.pl .st{margin-left:auto;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--dimmer)}
+.pl .st.done{color:var(--toxic)}
+
+/* chat */
+.chat{display:flex;flex-direction:column;height:min(74vh,600px);border:1px solid var(--dimmer);position:sticky;top:20px}
+@media(max-width:920px){.chat{position:static;height:56vh}}
+.chead{display:flex;align-items:center;gap:9px;padding:11px 13px;border-bottom:1px solid var(--dimmer);flex:none}
+.chead .t{font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dimmer)}
+.chead .live{margin-left:auto;font-size:9px;letter-spacing:.16em;color:var(--toxic);text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.clog{flex:1;overflow-y:auto;padding:13px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.clog::-webkit-scrollbar{width:5px}
+.clog::-webkit-scrollbar-thumb{background:var(--dimmer)}
+.m .nm{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--steel);margin-bottom:3px}
+.m .bd{font-size:13px;line-height:1.6;color:var(--line);letter-spacing:.01em;word-wrap:break-word;overflow-wrap:anywhere}
+.m .bd .at{color:var(--teal)}
+.m .bd .at.you{color:var(--neon);text-shadow:0 0 12px rgba(255,45,120,.5)}
+.m.judge{border-left:2px solid var(--neon);padding-left:12px}
+.m.judge .nm{color:var(--neon);font-weight:700;text-shadow:0 0 12px rgba(255,45,120,.6)}
+.m.judge .bd{font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:19px;text-transform:uppercase;line-height:1.14;letter-spacing:.02em}
+.m.judge .bd .at{color:var(--neon);font-weight:900}
+.m.sys{text-align:center}
+.m.sys .bd{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer)}
+.cbar{display:flex;border-top:1px solid var(--dimmer);flex:none}
+.cbar input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:var(--line);font-family:inherit;font-size:13px;padding:13px;letter-spacing:.02em}
+.cbar input::placeholder{color:var(--dimmer)}
+.cbar button{background:transparent;border:0;border-left:1px solid var(--dimmer);color:var(--dim);font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:15px;text-transform:uppercase;letter-spacing:.1em;padding:0 18px;cursor:pointer}
+.cbar button:hover{color:var(--neon)}
+.mentions{display:flex;gap:6px;padding:8px 13px;border-top:1px solid rgba(49,64,79,.5);flex-wrap:wrap;flex:none}
+.chip{font-size:9px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--dimmer);color:var(--dim);padding:4px 8px;cursor:pointer;background:transparent;font-family:inherit}
+.chip:hover{color:var(--line);border-color:var(--dim)}
+.chip.j{border-color:var(--neon);color:var(--neon)}
+
+.note{font-size:11px;color:var(--dim);line-height:1.7;margin-top:12px;letter-spacing:.02em}
+.note b{color:var(--line);font-weight:400}
+.waitline{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--dimmer);margin-top:16px;text-align:center}
+.pill{display:inline-block;font-size:9px;letter-spacing:.18em;text-transform:uppercase;border:1px solid var(--dimmer);color:var(--dim);padding:4px 9px;margin-right:6px}
+.pill.on{border-color:var(--toxic);color:var(--toxic)}
+button.go.sm{font-size:19px;padding:12px 18px;margin-top:18px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.grid2{grid-template-columns:1fr}}
+
+/* the flip to paper: the void and everything in it goes */
+body.paper .wrap{display:none}
+body.paper #marks{opacity:0}
+body.paper canvas#field{display:none}
+</style>
+<canvas id="field"></canvas>
+
+<div class="wrap">
+<div class="stage solo" id="stage">
+
+<div class="col" id="gamecol">
+
+  <div class="brand">
+    <div class="w">ABOM<i>I</i>NATION</div>
+    <div class="tag" id="brandTag">an icebreaker that starts with an argument</div>
+  </div>
+
+  <!-- 0 . join -->
+  <div class="screen on" id="s0">
+    <h1 class="hero"><b>twelve</b><i>food crimes</i></h1>
+    <p class="lede">Everyone joins on their own phone and confesses in <b>private</b>. Then a bot reads the room out loud, names who stood alone, and you all argue about it in the chat. It ends by telling you the one thing you <b>actually agree on</b>.</p>
+
+    <div class="lbl">your name</div>
+    <input class="t" id="nm" maxlength="14" placeholder="what they call you" autocomplete="off">
+
+    <div class="lbl">room code</div>
+    <input class="t" id="rc" maxlength="8" placeholder="make one up, or type theirs" autocomplete="off">
+    <div class="codehint" style="margin-top:8px">Everyone who types the <b>same code</b> lands in the same room.</div>
+
+    <button class="go" id="enter">enter the room</button>
+    <div class="err" id="e0"></div>
+    <div class="stack"><button class="ghost" id="demo">just show me how it ends</button></div>
+  </div>
+
+  <!-- 1 . lobby -->
+  <div class="screen" id="s1">
+    <div class="lbl" style="margin-top:0">tell everyone this</div>
+    <div class="code" id="codeBig">-</div>
+    <div class="codehint" id="codeUrl"></div>
+
+    <div class="lobby">
+      <h4 id="lobbyH">in the room</h4>
+      <div id="plist"></div>
+    </div>
+
+    <button class="go" id="toConfess">confess my crimes</button>
+    <button class="go sm" id="begin">begin the trial</button>
+    <div class="err" id="e1"></div>
+    <div class="note"><b>No pass-the-device.</b> Everyone answers at the same time. The trial cannot start until at least two of you have finished.</div>
+  </div>
+
+  <!-- 2 . the confession -->
+  <div class="screen" id="s2"><div class="qwrap">
+    <div class="count" id="qCount"></div>
+    <div class="bar"><i id="qBar" style="width:0%"></i></div>
+    <div class="item" id="qItem"></div>
+    <div class="sub" id="qSub"></div>
+    <div class="picks">
+      <button class="fine" id="bFine">perfectly<br>fine</button>
+      <button class="ab" id="bAb">abomi<br>nation</button>
+    </div>
+    <div class="waitline">nobody sees this until the reckoning</div>
+  </div></div>
+
+  <!-- 3 . the trial -->
+  <div class="screen" id="s3">
+    <div class="count" id="rCount"></div>
+    <div class="bar"><i id="rBar" style="width:0%"></i></div>
+    <div class="intrusion" id="rIntr"></div>
+    <div class="crime" id="rItem"></div>
+    <div class="tally">
+      <div class="side ab"><h3>abomination</h3><div class="num" id="rAbN">0</div><div class="who" id="rAbW"></div></div>
+      <div class="side fine"><h3>perfectly fine</h3><div class="num" id="rFiN">0</div><div class="who" id="rFiW"></div></div>
+    </div>
+    <div class="internet" id="rNet"></div>
+    <button class="go" id="rNext">next crime</button>
+  </div>
+
+</div>
+
+<!-- the chat column -->
+<div class="col" id="chatcol" style="display:none">
+  <div class="chat">
+    <div class="chead">
+      <span class="t" id="chTitle">room</span>
+      <span class="live"><span class="dot on"></span><span id="chCount">0</span> live</span>
+    </div>
+    <div class="clog" id="clog"></div>
+    <div class="mentions" id="chips"></div>
+    <div class="cbar">
+      <input id="cin" maxlength="240" placeholder="say something you will regret" autocomplete="off">
+      <button id="csend">send</button>
+    </div>
+  </div>
+</div>
+
+</div>
+</div>
+
+<div class="sheet paperwrap" id="paperSheet">
+  <h1 class="ph">the<i>verdict</i></h1>
+  <p class="psub" id="psub">what twelve arguments actually told you</p>
+  <div id="cards"></div>
+  <div class="stack">
+    <button class="ghost" id="again">new trial</button>
+    <button class="ghost" id="copy">copy the verdict</button>
+  </div>
+  <div class="foot">Built live in 30 minutes. <a href="https://github.com/aunysillyme/abomination">source</a></div>
+</div>
+<script>
+var API="https://abomination-room.aunysillyme.workers.dev";
+var $=function(i){return document.getElementById(i);};
+function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+var DECK=[], ME={id:null,name:null,room:null}, ANS={}, QI=0;
+var SEEN=0, POLL=null, LAST={phase:"lobby",crime:0,players:[]}, DEMO=false;
+
+/* ---------------- screens ---------------- */
+function show(n){
+  ["s0","s1","s2","s3"].forEach(function(id,i){
+    $(id).className="screen"+(i===n?" on":"");
+  });
+  window.scrollTo(0,0);
+}
+function showChat(on){
+  $("chatcol").style.display=on?"block":"none";
+  $("stage").className="stage"+(on?"":" solo");
+}
+function showPaper(){document.body.classList.add("paper");FIELD.mode="calm";}
+
+/* ---------------- net ---------------- */
+function post(act,body){
+  return fetch(API+"/r/"+ME.room+"/"+act,{
+    method:"POST",headers:{"content-type":"application/json"},
+    body:JSON.stringify(body||{})
+  }).then(function(r){return r.json();});
+}
+
+/* ---------------- join ---------------- */
+$("enter").addEventListener("click",function(){
+  var nm=$("nm").value.trim(), rc=$("rc").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(!nm){$("e0").textContent="the court needs a name";return;}
+  if(!rc){$("e0").textContent="pick a room code, any word";return;}
+  $("e0").textContent="";$("enter").disabled=true;
+  ME.room=rc;
+  post("join",{name:nm}).then(function(r){
+    $("enter").disabled=false;
+    if(r.error){$("e0").textContent=r.error;return;}
+    ME.id=r.id;ME.name=r.name;DECK=r.deck;
+    try{location.hash=rc;}catch(e){}
+    $("codeBig").textContent=rc;
+    $("codeUrl").innerHTML="everyone opens <b>"+esc(location.host+location.pathname)+"</b> and types it";
+    $("chTitle").textContent="room "+rc;
+    $("brandTag").textContent="room "+rc;
+    showChat(true);show(1);startPoll();
+  }).catch(function(){$("enter").disabled=false;$("e0").textContent="could not reach the room";});
+});
+$("nm").addEventListener("keydown",function(e){if(e.key==="Enter")$("rc").focus();});
+$("rc").addEventListener("keydown",function(e){if(e.key==="Enter")$("enter").click();});
+try{
+  var h=(location.hash||"").replace("#","").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(h)$("rc").value=h;
+}catch(e){}
+
+/* ---------------- polling ---------------- */
+function startPoll(){
+  if(POLL)clearInterval(POLL);
+  pull();POLL=setInterval(pull,1400);
+}
+function pull(){
+  if(DEMO||!ME.room)return;
+  fetch(API+"/r/"+ME.room+"/state?since="+SEEN).then(function(r){return r.json();}).then(paint)
+    .catch(function(){});
+}
+function paint(d){
+  if(!d||d.error)return;
+  var prevPhase=LAST.phase, prevCrime=LAST.crime;
+  LAST=d;
+
+  /* roster */
+  $("chCount").textContent=d.players.length;
+  var doneN=0;
+  $("plist").innerHTML=d.players.map(function(p){
+    if(p.done)doneN++;
+    var st=p.done?'<span class="st done">confessed</span>'
+      :'<span class="st">'+(p.at?("crime "+p.at+" of 12"):"not started")+'</span>';
+    return '<div class="pl'+(p.id===ME.id?" me":"")+'"><span class="dot'+(p.done?" on":"")+'"></span>'+esc(p.name)+st+'</div>';
+  }).join("")||'<div class="pl"><span class="dot"></span>nobody yet</div>';
+  $("lobbyH").textContent=d.players.length+" present · "+doneN+" confessed";
+  $("begin").disabled=doneN<2;
+  $("begin").textContent=doneN<2?"waiting for 2 confessions":"begin the trial";
+
+  /* chips */
+  var chips='<button class="chip j" data-at="judge">@judge</button>'+
+    d.players.filter(function(p){return p.id!==ME.id;})
+      .map(function(p){return '<button class="chip" data-at="'+esc(p.name)+'">@'+esc(p.name)+'</button>';}).join("");
+  if($("chips").dataset.k!==chips){$("chips").innerHTML=chips;$("chips").dataset.k=chips;}
+
+  /* chat */
+  if(d.msgs&&d.msgs.length){
+    var log=$("clog"), near=(log.scrollHeight-log.scrollTop-log.clientHeight)<90;
+    d.msgs.forEach(function(m){
+      SEEN=Math.max(SEEN,m.i);
+      var div=document.createElement("div");
+      div.className="m "+(m.kind||"say");
+      var body=esc(m.body).replace(/@([A-Za-z0-9_-]+)/g,function(_,n){
+        var you=ME.name&&n.toUpperCase()===ME.name.toUpperCase();
+        return '<span class="at'+(you?" you":"")+'">@'+n+'</span>';
+      });
+      div.innerHTML=(m.kind==="sys"?"":'<div class="nm">'+esc(m.from)+'</div>')+'<div class="bd">'+body+'</div>';
+      log.appendChild(div);
+      if(m.kind==="judge")FIELD.jolt=1;
+    });
+    if(near)log.scrollTop=log.scrollHeight;
+  }
+
+  /* phase */
+  if(d.phase==="trial"){
+    FIELD.mode="watch";
+    if(prevPhase!=="trial"||prevCrime!==d.crime||$("s3").className.indexOf("on")<0)drawR(d);
+    if($("s3").className.indexOf("on")<0)show(3);
+  }else if(d.phase==="over"){
+    if(prevPhase!=="over"){clearInterval(POLL);toVerdict(d);}
+  }
+}
+
+/* ---------------- chat send ---------------- */
+function send(){
+  var t=$("cin").value.trim();
+  if(!t||!ME.id)return;
+  $("cin").value="";
+  post("say",{id:ME.id,text:t}).then(function(){pull();});
+}
+$("csend").addEventListener("click",send);
+$("cin").addEventListener("keydown",function(e){if(e.key==="Enter")send();});
+$("chips").addEventListener("click",function(e){
+  var b=e.target.closest("[data-at]");if(!b)return;
+  var i=$("cin");i.value=(i.value.replace(/\s+$/,"")+" @"+b.dataset.at+" ").replace(/^\s+/,"");i.focus();
+});
+
+/* ---------------- the confession ---------------- */
+$("toConfess").addEventListener("click",function(){QI=0;drawQ();show(2);});
+function drawQ(){
+  var d=DECK[QI];if(!d)return;
+  $("qCount").textContent="crime "+(QI+1)+" of "+DECK.length;
+  $("qBar").style.width=((QI/DECK.length)*100)+"%";
+  $("qItem").textContent=d.t;
+  $("qSub").textContent=d.s;
+}
+function answer(v){
+  ANS[QI]=v;QI++;
+  if(QI>=DECK.length){
+    post("confess",{id:ME.id,answers:ANS}).then(function(){pull();});
+    show(1);return;
+  }
+  post("confess",{id:ME.id,answers:ANS});
+  drawQ();
+}
+$("bFine").addEventListener("click",function(){answer(0);});
+$("bAb").addEventListener("click",function(){answer(1);});
+
+/* ---------------- begin / advance ---------------- */
+$("begin").addEventListener("click",function(){
+  $("e1").textContent="";
+  post("begin",{id:ME.id}).then(function(r){
+    if(r.error)$("e1").textContent=r.error;else pull();
+  });
+});
+$("rNext").addEventListener("click",function(){
+  $("rNext").disabled=true;
+  post("advance",{id:ME.id}).then(function(){$("rNext").disabled=false;pull();});
+});
+
+/* ---------------- the reckoning ---------------- */
+var INTR=["they are watching","someone here is lying","this is being recorded",
+  "the room already knows","no take-backs","it is on the record now",
+  "everyone can see this","you did this to yourself"];
+function drawR(d){
+  var ci=d.crime, c=DECK[ci];if(!c)return;
+  var ab=(d.reveal&&d.reveal.ab)||[], fi=(d.reveal&&d.reveal.fi)||[];
+  $("rCount").textContent="crime "+(ci+1)+" of "+DECK.length;
+  $("rBar").style.width=(((ci+1)/DECK.length)*100)+"%";
+  $("rIntr").textContent=INTR[ci%INTR.length];
+  $("rItem").textContent=c.t;
+  $("rAbN").textContent=ab.length;$("rAbW").textContent=ab.join(", ")||"—";
+  $("rFiN").textContent=fi.length;$("rFiW").textContent=fi.join(", ")||"—";
+  $("rNet").innerHTML="<b>"+esc(c.s)+"</b>";
+  FIELD.intensity=Math.min(.95,.28+(ci/DECK.length)*.7);
+  $("rNext").textContent=(ci>=DECK.length-1)?"deliver the verdict":"next crime";
+}
+
+/* ---------------- demo ---------------- */
+$("demo").addEventListener("click",function(){
+  DEMO=true;
+  var names=["AUNY","JESS","SAM","MARCO","DEE"];
+  DECK=[{t:"Paper straws",s:"the soggy ones"},{t:"Boneless wings",s:"they are nuggets"},
+    {t:"Pineapple on pizza",s:"you know what you did"},{t:"Pumpkin spice coffee",s:"seasonal crime"},
+    {t:"Peanut butter and jelly",s:"a texture problem"},{t:"Fries in a milkshake",s:"salt meets dairy"},
+    {t:"Well done steak",s:"it was already dead"},{t:"Naps",s:"a nap is a small death"},
+    {t:"Orange juice",s:"pulp is not the issue"},{t:"Ketchup on eggs",s:"breakfast has boundaries"},
+    {t:"Clapping when the plane lands",s:"he is at work"},{t:"Replying k",s:"one letter, whole war"}];
+  var A={AUNY:[1,1,1,1,0,1,1,0,1,1,1,1],JESS:[1,1,0,1,1,0,1,1,0,1,1,1],
+    SAM:[1,0,1,1,1,1,1,1,1,0,1,0],MARCO:[0,1,1,0,1,1,1,1,1,1,1,1],
+    DEE:[1,1,1,1,1,1,1,1,0,1,0,1]};
+  var players=names.map(function(n){
+    var o={};A[n].forEach(function(v,i){o[i]=v;});
+    return {id:n,name:n,done:true,at:12,answers:o};
+  });
+  toVerdict({phase:"over",players:players});
+});
+
+/* ---------------- the verdict ---------------- */
+function wobbly(seed){
+  var pts=[],i;
+  function j(a){seed=(seed*9301+49297)%233280;return a*(seed/233280-.5);}
+  pts.push("M "+(1+j(1.6))+" "+(2+j(1.6)));
+  pts.push("L "+(99+j(1.6))+" "+(1.4+j(1.6)));
+  pts.push("L "+(98.6+j(1.6))+" "+(98.4+j(1.6)));
+  pts.push("L "+(1.5+j(1.6))+" "+(99+j(1.6)));
+  pts.push("Z");
+  return pts.join(" ");
+}
+function frame(i,color){
+  return '<svg class="frame" viewBox="0 0 100 100" preserveAspectRatio="none">'+
+    '<path d="'+wobbly(i*77+13)+'" fill="none" stroke="'+color+'" stroke-width="0.55" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>'+
+    '<path d="'+wobbly(i*131+41)+'" fill="none" stroke="'+color+'" stroke-width="0.3" opacity=".45" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>'+
+    '</svg>';
+}
+function toVerdict(d){
+  var ps=d.players.filter(function(p){return p.answers&&Object.keys(p.answers).length;});
+  if(ps.length<2){showPaper();$("cards").innerHTML='<div class="pcard pc1">'+frame(0,"#E0357B")+
+    '<div class="ct">no verdict</div><div class="cn">not enough confessions</div>'+
+    '<div class="cd">The court needs at least two people who finished all twelve.</div></div>';return;}
+  var n=ps.length, score={}, universal=null, allies=null;
+  ps.forEach(function(p){score[p.name]=0;});
+  DECK.forEach(function(c,ci){
+    var ab=[],fi=[];
+    ps.forEach(function(p){ if(p.answers[ci]===1)ab.push(p.name); else if(p.answers[ci]===0)fi.push(p.name); });
+    fi.forEach(function(nm){score[nm]+=ab.length;});
+    if(ab.length===n&&!universal)universal=c.t;
+    if(fi.length===2&&ab.length===n-2&&!allies)allies={pair:fi,item:c.t};
+  });
+  var ranked=ps.map(function(p){return p.name;}).sort(function(a,b){return score[b]-score[a];});
+  var cursed=ranked[0], purist=ranked[ranked.length-1];
+
+  var cards=[
+    {c:"pc1",col:"#E0357B",t:"most cursed individual",n:cursed,
+     d:'Defended their worst positions against <b>'+score[cursed]+' separate objections</b>. This is not a personality, it is a warning.',doodle:"yikes →"},
+    {c:"pc2",col:"#2B49C9",t:"insufferable purist",n:purist,
+     d:'Objected to nearly everything and enjoyed <b>none of it</b>. Technically correct. Exhausting.',doodle:"we get it"},
+    {c:"pc3",col:"#1F8A4C",t:"the one thing you all agree on",n:universal||"nothing",
+     d:universal?'Every single person called it an abomination. You disagree about everything else. <b>Start here.</b>'
+       :'Not one unanimous verdict in '+DECK.length+' crimes. This room agrees on <b>absolutely nothing</b>, which is its own kind of bond.',
+     doodle:universal?"★ common ground":"lol"}
+  ];
+  if(allies)cards.push({c:"pc4",col:"#C4761B",t:"unlikely allies",n:allies.pair[0]+" + "+allies.pair[1],
+    d:'Alone together on <b>'+esc(allies.item)+'</b>, against the whole room. You two have something and did not know it.',doodle:"↖ besties"});
+
+  $("cards").innerHTML=cards.map(function(k,i){
+    return '<div class="pcard '+k.c+'">'+frame(i,k.col)+
+      '<div class="ct">'+k.t+'</div><div class="cn">'+esc(k.n)+'</div><div class="cd">'+k.d+'</div>'+
+      '<span class="doodle" style="right:14px;bottom:-8px;color:'+k.col+';transform:rotate('+((i%2)?2.5:-3)+'deg)">'+k.doodle+'</span>'+
+      '</div>';
+  }).join("");
+  showPaper();
+
+  $("copy").onclick=function(){
+    var txt="ABOMINATION — the verdict\n\nMost cursed: "+cursed+
+      "\nInsufferable purist: "+purist+
+      "\nAgreed on: "+(universal||"nothing at all")+
+      (allies?("\nUnlikely allies: "+allies.pair.join(" + ")+" on "+allies.item):"")+
+      "\n\nplay at "+location.host+location.pathname;
+    navigator.clipboard.writeText(txt).then(function(){$("copy").textContent="copied";},
+      function(){$("copy").textContent="copy failed";});
+  };
+}
+$("again").addEventListener("click",function(){location.hash="";location.reload();});
+</script>
+<script>
+/* ---------- THE FIELD ----------
+   Negative Space: a void with points of light.
+   Schitzo: the points open into eyes, and the eyes follow your cursor.
+   Watching is the engine, so the pointer is the thing being watched. */
+var cv=$("field"), ctx=cv.getContext("2d"), W=0,H=0,DPR=1;
+var FIELD={mode:"calm",intensity:.3,shown:0,jolt:0};
+var PTS=[], MX=-9999, MY=-9999, TX=-9999, TY=-9999, MOVED=0;
+
+function seed(){
+  PTS=[];
+  var n=Math.round(Math.min(170,Math.max(55,(W*H)/11000)));
+  for(var i=0;i<n;i++){
+    PTS.push({x:Math.random(),y:Math.random(),r:.4+Math.random()*1.5,
+      ph:Math.random()*6.28,sp:.15+Math.random()*.5,tw:Math.random(),
+      dx:0,dy:0,dep:.3+Math.random()*.7});
+  }
+}
+function resize(){
+  DPR=Math.min(window.devicePixelRatio||1,2);
+  W=window.innerWidth;H=window.innerHeight;
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  cv.style.width=W+"px";cv.style.height=H+"px";
+  ctx.setTransform(DPR,0,0,DPR,0,0); seed();
+}
+window.addEventListener("resize",resize);
+
+function aim(x,y){TX=x;TY=y;MOVED=1;parallax(x,y);}
+window.addEventListener("mousemove",function(e){aim(e.clientX,e.clientY);},{passive:true});
+window.addEventListener("touchmove",function(e){
+  if(e.touches&&e.touches[0])aim(e.touches[0].clientX,e.touches[0].clientY);
+},{passive:true});
+window.addEventListener("mouseleave",function(){MOVED=0;});
+
+function tick(t){
+  ctx.clearRect(0,0,W,H);
+
+  if(MOVED){MX+=(TX-MX)*.12;MY+=(TY-MY)*.12;}
+  var want=(FIELD.mode==="watch")?FIELD.intensity:0;
+  FIELD.shown+=(want-FIELD.shown)*.03;
+  FIELD.jolt*=.94;
+  var eye=FIELD.shown, jolt=FIELD.jolt;
+
+  for(var i=0;i<PTS.length;i++){
+    var p=PTS[i], bx=p.x*W, by=p.y*H;
+
+    /* cursor pushes the field, by depth, so it has volume */
+    var ddx=bx-MX, ddy=by-MY, d2=ddx*ddx+ddy*ddy, near=0;
+    if(MOVED&&d2<40000){
+      var d=Math.sqrt(d2)||1; near=1-d/200;
+      p.dx+=(ddx/d)*near*1.9; p.dy+=(ddy/d)*near*1.9;
+    }
+    p.dx*=.90;p.dy*=.90;
+    var x=bx+p.dx, y=by+p.dy;
+
+    var pulse=.55+.45*Math.sin(t/1000*p.sp+p.ph);
+    var a=(.10+.34*pulse)*(1-eye*.45)+near*.5+jolt*.18;
+    ctx.beginPath();ctx.arc(x,y,p.r+near*1.1,0,6.283);
+    ctx.fillStyle="rgba(232,244,255,"+Math.min(.95,a).toFixed(3)+")";ctx.fill();
+
+    /* the point opens into an eye, and the eye finds you */
+    if(eye>.02 && p.tw<eye){
+      var s=p.r*3.1*eye*(1+jolt*.35), o=Math.min(.95,(.30+.34*pulse)*eye+jolt*.3);
+      ctx.strokeStyle="rgba(255,45,120,"+o.toFixed(3)+")";
+      ctx.lineWidth=.7;
+      ctx.beginPath();
+      ctx.moveTo(x-s,y);ctx.quadraticCurveTo(x,y-s*.62,x+s,y);
+      ctx.quadraticCurveTo(x,y+s*.62,x-s,y);
+      ctx.stroke();
+      var px=0,py=0;
+      if(MOVED){
+        var vx=MX-x, vy=MY-y, vl=Math.sqrt(vx*vx+vy*vy)||1, reach=Math.min(1,vl/420);
+        px=(vx/vl)*s*.34*reach; py=(vy/vl)*s*.22*reach;
+      }
+      ctx.beginPath();ctx.arc(x+px,y+py,s*.26,0,6.283);
+      ctx.fillStyle="rgba(255,45,120,"+(o*.85).toFixed(3)+")";ctx.fill();
+    }
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---------- HAND MARKS ----------
+   Sketchy's vocabulary as loose marginalia: drawn, never placed.
+   They drift against the cursor so the page has depth. */
+var MARKS=[
+  {d:"M4 20 L10 4 M10 4 L16 20 M6.5 14 L13.5 14",w:1.5,s:52},
+  {d:"M3 12 Q12 2 21 12 Q12 22 3 12 M12 8 a4 4 0 1 0 .1 0",w:1.3,s:46},
+  {d:"M6 3 L6 13 M10 3 L10 13 M14 3 L14 13 M4 13 L16 13 L15 21 L5 21 Z",w:1.4,s:44},
+  {d:"M12 21 C2 13 3 5 8 4 C11 3.4 12 6 12 7 C12 6 13 3.4 16 4 C21 5 22 13 12 21 M3 3 L21 21",w:1.4,s:44},
+  {d:"M12 2 L14.6 9 L22 9 L16 13.6 L18.2 21 L12 16.6 L5.8 21 L8 13.6 L2 9 L9.4 9 Z",w:1.3,s:40},
+  {d:"M2 18 C7 4 11 22 15 9 C17 3 20 8 22 12",w:1.5,s:50},
+  {d:"M3 12 L19 12 M13 6 L19 12 L13 18",w:1.5,s:44},
+  {d:"M12 3 a9 9 0 1 0 .1 0 M8.5 10 h.01 M15.5 10 h.01 M8 15.5 Q12 12.5 16 15.5",w:1.3,s:46}
+];
+function marks(){
+  var host=document.createElement("div");
+  host.id="marks";
+  host.style.cssText="position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden";
+  var cols=["#31404F","#31404F","#4FD9D9","#FF2D78","#5C7086","#31404F","#7FA6C4","#FF2D78"];
+  var spots=[[6,14],[89,10],[4,52],[93,44],[10,84],[86,78],[48,6],[70,93],[26,96],[95,66]];
+  for(var i=0;i<spots.length;i++){
+    var m=MARKS[i%MARKS.length], col=cols[i%cols.length];
+    var el=document.createElement("div");
+    el.className="mk";
+    el.dataset.dep=(0.25+((i%4)*0.22)).toFixed(2);
+    el.style.cssText="position:absolute;left:"+spots[i][0]+"%;top:"+spots[i][1]+"%;opacity:"+(i%3===0?.5:.32)+
+      ";transform:rotate("+((i*47)%70-35)+"deg);will-change:transform";
+    el.innerHTML='<svg width="'+m.s+'" height="'+m.s+'" viewBox="0 0 24 24" fill="none" '+
+      'stroke="'+col+'" stroke-width="'+m.w+'" stroke-linecap="round" stroke-linejoin="round">'+
+      '<path d="'+m.d+'"/></svg>';
+    host.appendChild(el);
+  }
+  document.body.appendChild(host);
+}
+function parallax(x,y){
+  var host=$("marks");if(!host)return;
+  var ox=(x/window.innerWidth-.5), oy=(y/window.innerHeight-.5);
+  var els=host.children;
+  for(var i=0;i<els.length;i++){
+    var dep=parseFloat(els[i].dataset.dep)||.3;
+    els[i].style.transform="translate("+(-ox*38*dep).toFixed(1)+"px,"+(-oy*30*dep).toFixed(1)+"px) rotate("+((i*47)%70-35)+"deg)";
+  }
+}
+
+marks();resize();requestAnimationFrame(tick);
+</script>
