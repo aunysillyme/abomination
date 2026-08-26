@@ -272,7 +272,7 @@ button.gt.on h5{color:var(--neon)}
   background:linear-gradient(to top,rgba(4,6,10,.97),rgba(4,6,10,.72) 70%,transparent);
   padding:14px 16px 12px;pointer-events:none}
 #presence.on{display:block}
-body.paper #presence{display:none}
+body.paper #presence{display:block}
 .pstrip{max-width:1120px;margin:0 auto;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
 .pf{display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;opacity:.55}
 .pf.done{opacity:1}
@@ -285,6 +285,55 @@ body.paper #presence{display:none}
 .pl .av{margin-right:2px}
 .m .who{display:flex;align-items:center;gap:7px;margin-bottom:3px}
 .m .who .nm{margin-bottom:0}
+</style>
+<style>
+/* --- THE VERDICT, RETHEMED: it never leaves the void --- */
+body.paper{background:var(--void)}
+body.paper #field{opacity:1}
+body.paper canvas#field{display:block}
+body.paper #marks{opacity:.55}
+.paperwrap{color:var(--line);font-family:"JetBrains Mono",ui-monospace,monospace;max-width:760px}
+.paperwrap .ph{color:var(--line)}
+.paperwrap .ph i{color:var(--neon);text-shadow:0 0 28px rgba(255,45,120,.5)}
+.paperwrap .psub{font-family:"JetBrains Mono",monospace;font-weight:400;font-size:12px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--dimmer);transform:none;margin:0 0 34px}
+.pcard{padding:22px 22px 26px;margin-bottom:20px}
+.pcard .ct{color:var(--dimmer)}
+.pcard .cd{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px;line-height:1.7;color:var(--dim)}
+.pcard .cd b{color:var(--line);font-weight:400}
+.pc1 .cn{color:var(--neon);text-shadow:0 0 24px rgba(255,45,120,.4)}
+.pc2 .cn{color:var(--teal);text-shadow:0 0 24px rgba(79,217,217,.4)}
+.pc3 .cn{color:var(--toxic);text-shadow:0 0 24px rgba(79,255,168,.35)}
+.pc4 .cn{color:#FFB347;text-shadow:0 0 24px rgba(255,179,71,.35)}
+.doodle{font-family:Caveat,cursive;font-weight:700;font-size:20px}
+.paperwrap .foot{color:var(--dimmer);margin-top:26px}
+.paperwrap .foot a{color:var(--teal)}
+.paperwrap button.ghost{border-color:var(--dimmer);color:var(--dim)}
+.paperwrap button.ghost:hover{border-color:var(--dim);color:var(--line)}
+
+/* --- the arcade is the point of this page --- */
+.arcadeCta{margin:34px 0 18px;position:relative}
+button.arcade{
+  font-family:"Big Shoulders Display",sans-serif;font-weight:900;
+  font-size:clamp(30px,7.5vw,52px);text-transform:uppercase;letter-spacing:.03em;
+  width:100%;padding:24px 20px 20px;cursor:pointer;line-height:.94;
+  background:transparent;border:1px solid var(--teal);color:var(--teal);
+  box-shadow:0 0 34px rgba(79,217,217,.22),inset 0 0 40px rgba(79,217,217,.07);
+  animation:hum 2.6s ease-in-out infinite;
+}
+button.arcade small{display:block;font-family:"JetBrains Mono",monospace;font-weight:400;
+  font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);margin-top:9px}
+button.arcade:hover{border-color:var(--neon);color:var(--neon);animation:none;
+  box-shadow:0 0 44px rgba(255,45,120,.34),inset 0 0 48px rgba(255,45,120,.10)}
+button.arcade:hover small{color:var(--steel)}
+@keyframes hum{
+  0%,100%{box-shadow:0 0 30px rgba(79,217,217,.18),inset 0 0 36px rgba(79,217,217,.06)}
+  50%    {box-shadow:0 0 50px rgba(79,217,217,.36),inset 0 0 54px rgba(79,217,217,.13)}
+}
+.arcadeCta .flag{position:absolute;top:-13px;right:14px;background:var(--void);
+  font-family:Caveat,cursive;font-weight:700;font-size:20px;color:var(--neon);
+  padding:0 9px;transform:rotate(-3deg);white-space:nowrap}
+@media(prefers-reduced-motion:reduce){button.arcade{animation:none}}
 </style>
 <canvas id="field"></canvas>
 
@@ -411,8 +460,11 @@ body.paper #presence{display:none}
   <h1 class="ph">the<i>verdict</i></h1>
   <p class="psub" id="psub">what twelve arguments actually told you</p>
   <div id="cards"></div>
+  <div class="arcadeCta">
+    <span class="flag">now settle it &#8600;</span>
+    <button class="arcade" id="toArcade">enter the arcade<small>snake &middot; nerve &middot; reflex &middot; one live leaderboard</small></button>
+  </div>
   <div class="stack">
-    <button class="ghost" id="toArcade">to the arcade</button>
     <button class="ghost" id="again">new trial</button>
     <button class="ghost" id="copy">copy the verdict</button>
   </div>
@@ -679,7 +731,7 @@ function frame(i,color){
 }
 function toVerdict(d){
   var ps=d.players.filter(function(p){return p.answers&&Object.keys(p.answers).length;});
-  if(ps.length<2){showPaper();$("cards").innerHTML='<div class="pcard pc1">'+frame(0,"#E0357B")+
+  if(ps.length<2){showPaper();$("cards").innerHTML='<div class="pcard pc1">'+frame(0,"#FF2D78")+
     '<div class="ct">no verdict</div><div class="cn">not enough confessions</div>'+
     '<div class="cd">The court needs at least two people who finished all twelve.</div></div>';return;}
   var n=ps.length, score={}, universal=null, allies=null;
@@ -695,16 +747,16 @@ function toVerdict(d){
   var cursed=ranked[0], purist=ranked[ranked.length-1];
 
   var cards=[
-    {c:"pc1",col:"#E0357B",t:"most cursed individual",n:cursed,
+    {c:"pc1",col:"#FF2D78",t:"most cursed individual",n:cursed,
      d:'Defended their worst positions against <b>'+score[cursed]+' separate objections</b>. This is not a personality, it is a warning.',doodle:"yikes →"},
-    {c:"pc2",col:"#2B49C9",t:"insufferable purist",n:purist,
+    {c:"pc2",col:"#4FD9D9",t:"insufferable purist",n:purist,
      d:'Objected to nearly everything and enjoyed <b>none of it</b>. Technically correct. Exhausting.',doodle:"we get it"},
-    {c:"pc3",col:"#1F8A4C",t:"the one thing you all agree on",n:universal||"nothing",
+    {c:"pc3",col:"#4FFFA8",t:"the one thing you all agree on",n:universal||"nothing",
      d:universal?'Every single person called it an abomination. You disagree about everything else. <b>Start here.</b>'
        :'Not one unanimous verdict in '+DECK.length+' crimes. This room agrees on <b>absolutely nothing</b>, which is its own kind of bond.',
      doodle:universal?"★ common ground":"lol"}
   ];
-  if(allies)cards.push({c:"pc4",col:"#C4761B",t:"unlikely allies",n:allies.pair[0]+" + "+allies.pair[1],
+  if(allies)cards.push({c:"pc4",col:"#FFB347",t:"unlikely allies",n:allies.pair[0]+" + "+allies.pair[1],
     d:'Alone together on <b>'+esc(allies.item)+'</b>, against the whole room. You two have something and did not know it.',doodle:"↖ besties"});
 
   $("cards").innerHTML=cards.map(function(k,i){
