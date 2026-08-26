@@ -252,6 +252,33 @@ body.paper canvas#field{display:none}
 .rrow.me .rstat em{color:var(--neon)}
 @media(max-width:520px){.rstat{width:58px;font-size:8.5px}.rstat em{font-size:21px}}
 .paperwrap{padding-bottom:190px}
+/* --- arcade standings: the whole room, all three games --- */
+.standings{margin-top:22px;border:1px solid var(--dimmer);padding:16px}
+.standings h4{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;
+  text-transform:uppercase;letter-spacing:.06em;color:var(--teal);margin:0 0 3px}
+.standings .sn{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--dimmer);margin-bottom:14px}
+.sgrid{display:grid;grid-template-columns:26px 1fr repeat(3,58px) 46px;gap:8px;align-items:center}
+@media(max-width:560px){.sgrid{grid-template-columns:20px 1fr repeat(3,46px) 38px;gap:5px}}
+.shead{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer);
+  text-align:right;padding-bottom:8px;border-bottom:1px solid rgba(49,64,79,.5)}
+.shead.l{text-align:left}
+.srow{display:contents}
+.srow .c{padding:9px 0;border-bottom:1px solid rgba(49,64,79,.3);font-size:13px;text-align:right}
+.srow .c.l{text-align:left;display:flex;align-items:center;gap:9px;min-width:0}
+.srow .c.l b{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;
+  text-transform:uppercase;letter-spacing:.03em;color:var(--line);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srow .rk{font-size:11px;color:var(--dimmer);text-align:center}
+.srow .c.v{color:var(--dim);font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:17px}
+.srow .c.v.win{color:var(--toxic);text-shadow:0 0 12px rgba(79,255,168,.4)}
+.srow .c.v.none{color:var(--dimmer);font-size:13px}
+.srow .c.pts{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:21px;color:var(--teal)}
+.srow.lead .c.l b{color:var(--teal);text-shadow:0 0 14px rgba(79,217,217,.45)}
+.srow.me .c.l b{color:var(--neon)}
+.srow.me .c.pts{color:var(--neon)}
+.sempty{font-size:12.5px;color:var(--dimmer);letter-spacing:.03em;padding-top:4px}
+.crown{color:var(--teal);font-size:12px}
 .lockbox{border:1px solid var(--dimmer);padding:14px 16px;margin:6px 0 4px}
 .lockrow{display:flex;align-items:center;gap:11px;padding:8px 0;font-size:14px;
   color:var(--dimmer);border-bottom:1px solid rgba(49,64,79,.4);letter-spacing:.03em}
@@ -478,6 +505,7 @@ button.arcade:hover small{color:var(--steel)}
       <div class="board" id="board"></div>
       <div class="gnote">Your best score per game is what sticks. Everyone sees the board update live.</div>
     </div>
+    <div class="standings" id="standings"></div>
     <div class="stack">
       <button class="ghost" id="backPaper">back to the verdict</button>
       <button class="ghost" id="home3">back to the start</button>
@@ -622,7 +650,7 @@ function paint(d){
 
   var mine=(d.players||[]).filter(function(q){return q.id===ME.id;})[0];
   ME.done=mine?!!mine.done:false;
-  if(d.scores){SCORES=d.scores;if(GCUR){drawBoard(GCUR);drawTiles();}}
+  if(d.scores){SCORES=d.scores;drawStandings();if(GCUR){drawBoard(GCUR);drawTiles();}}
   drawPresence(d.players);
 
   /* roster */
@@ -976,7 +1004,7 @@ function leader(g){
 function submitScore(g,v){
   if(!ME.id)return;
   post("score",{id:ME.id,game:g,value:v}).then(function(r){
-    if(r&&r.board){SCORES[g]=r.board;drawBoard(g);drawTiles();}
+    if(r&&r.board){SCORES[g]=r.board;drawBoard(g);drawTiles();drawStandings();}
     pull();
   });
 }
@@ -989,6 +1017,54 @@ function drawTiles(){
       '<div class="lead">'+(l?('leader <b>'+esc(l.nm)+'</b> '+gfmt(g,l.v)):'nobody yet')+'</div></button>';
   }).join("");
 }
+function drawStandings(){
+  var host=$("standings"); if(!host)return;
+  var games=Object.keys(GMETA), pts={}, cell={}, names={};
+
+  games.forEach(function(g){
+    var b=SCORES[g]||{}, lo=GMETA[g].low;
+    var rows=Object.keys(b).map(function(nm){return {nm:nm,v:b[nm]};})
+      .sort(function(a,c){return lo?a.v-c.v:c.v-a.v;});
+    rows.forEach(function(r,i){
+      names[r.nm]=true;
+      pts[r.nm]=(pts[r.nm]||0)+Math.max(0,3-i);
+      cell[r.nm]=cell[r.nm]||{};
+      cell[r.nm][g]={txt:gfmt(g,r.v),win:i===0};
+    });
+  });
+
+  var who=Object.keys(names);
+  if(!who.length){
+    host.innerHTML='<h4>arcade standings</h4><div class="sn">the whole room, all three games</div>'+
+      '<div class="sempty">Nothing on the board yet. Somebody play something.</div>';
+    return;
+  }
+  who.sort(function(a,b){return (pts[b]||0)-(pts[a]||0)||a.localeCompare(b);});
+  var top=pts[who[0]]||0;
+
+  var head='<div class="shead l">&nbsp;</div><div class="shead l">player</div>'+
+    games.map(function(g){return '<div class="shead">'+GMETA[g].label+'</div>';}).join("")+
+    '<div class="shead">pts</div>';
+
+  var body=who.map(function(nm,i){
+    var pl=(LAST.players||[]).filter(function(q){return q.name===nm;})[0];
+    var lead=(pts[nm]||0)===top&&top>0;
+    return '<div class="srow'+(lead?" lead":"")+(ME.name&&nm===ME.name?" me":"")+'">'+
+      '<div class="c rk">'+(lead?'<span class="crown">&#9733;</span>':(i+1))+'</div>'+
+      '<div class="c l">'+(pl?avatar(pl.av,24):"")+'<b>'+esc(nm)+'</b></div>'+
+      games.map(function(g){
+        var c=(cell[nm]||{})[g];
+        return '<div class="c v'+(c&&c.win?" win":"")+(c?"":" none")+'">'+(c?c.txt:"&mdash;")+'</div>';
+      }).join("")+
+      '<div class="c pts">'+(pts[nm]||0)+'</div>'+
+    '</div>';
+  }).join("");
+
+  host.innerHTML='<h4>arcade standings</h4>'+
+    '<div class="sn">the whole room, all three games &middot; 3-2-1 per game</div>'+
+    '<div class="sgrid">'+head+body+'</div>';
+}
+
 function drawBoard(g){
   var host=$("board"); if(!host||!g)return;
   var b=SCORES[g]||{}, lo=GMETA[g].low;
@@ -1180,7 +1256,7 @@ $("toArcade").addEventListener("click",function(){
   document.body.classList.remove("paper");
   FIELD.mode="watch";FIELD.intensity=.42;
   showChat(true);show(4);
-  drawTiles();if(!GCUR)openGame("snake");
+  drawTiles();drawStandings();if(!GCUR)openGame("snake");
   if(!POLL)startPoll();
 });
 function gateOk(){
@@ -1195,7 +1271,7 @@ $("backPaper").addEventListener("click",function(){
   if(!gateOk())return;
   document.body.classList.add("paper");FIELD.mode="calm";
 });
-drawTiles();
+drawTiles();drawStandings();
 </script>
 
 <script>
