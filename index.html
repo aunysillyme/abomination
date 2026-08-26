@@ -234,6 +234,24 @@ body.paper canvas#field{display:none}
 .ahead i{font-style:normal;font-weight:900;display:block;color:var(--teal);text-shadow:0 0 26px rgba(79,217,217,.45)}
 .asub{color:var(--dim);font-size:14px;line-height:1.7;margin:0 0 24px;max-width:48ch}
 
+.pcAll .ct{margin-bottom:12px}
+.rlist{display:flex;flex-direction:column}
+.rrow{display:flex;align-items:center;gap:12px;padding:10px 0;
+  border-bottom:1px solid rgba(49,64,79,.4)}
+.rrow:last-child{border-bottom:0}
+.rn{min-width:0;flex:1}
+.rn b{display:block;font-family:"Big Shoulders Display",sans-serif;font-weight:900;
+  font-size:22px;text-transform:uppercase;letter-spacing:.03em;color:var(--line);line-height:1}
+.rn span{display:block;font-size:11px;letter-spacing:.06em;color:var(--dimmer);margin-top:3px}
+.rrow.me .rn b{color:var(--neon)}
+.rrow.me .rn span{color:var(--steel)}
+.rstat{text-align:right;font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--dimmer);width:74px;flex:none;line-height:1.3}
+.rstat em{display:block;font-style:normal;font-family:"Big Shoulders Display",sans-serif;
+  font-weight:200;font-size:26px;color:var(--steel);line-height:1}
+.rrow.me .rstat em{color:var(--neon)}
+@media(max-width:520px){.rstat{width:58px;font-size:8.5px}.rstat em{font-size:21px}}
+.paperwrap{padding-bottom:190px}
 .lockbox{border:1px solid var(--dimmer);padding:14px 16px;margin:6px 0 4px}
 .lockrow{display:flex;align-items:center;gap:11px;padding:8px 0;font-size:14px;
   color:var(--dimmer);border-bottom:1px solid rgba(49,64,79,.4);letter-spacing:.03em}
@@ -514,7 +532,7 @@ function esc(t){return String(t==null?"":t).replace(/[&<>"]/g,function(c){return
 
 var DECK=[], ME={id:null,name:null,room:null}, ANS={}, QI=0;
 var SEEN=0, POLL=null, LAST={phase:"lobby",crime:0,players:[]}, DEMO=false;
-var LOCKED=false, OVERSTATE=null;
+var LOCKED=false, OVERSTATE=null, VRENDERED=false, VSIG="";
 
 /* ---------------- screens ---------------- */
 function show(n){
@@ -663,9 +681,8 @@ function paint(d){
         FIELD.mode="watch";FIELD.intensity=.5;
         showChat(true);show(5);
       }
-    }else if(prevPhase!=="over"||LOCKED){
+    }else{
       LOCKED=false;
-      if(POLL){clearInterval(POLL);POLL=null;}
       toVerdict(d);
     }
   }
@@ -792,6 +809,11 @@ function frame(i,color){
 }
 function toVerdict(d){
   var ps=d.players.filter(function(p){return p.answers&&Object.keys(p.answers).length;});
+  var sig=ps.map(function(q){
+    return q.name+":"+Object.keys(q.answers).map(function(k){return k+q.answers[k];}).join("");
+  }).join("|");
+  if(VRENDERED&&sig===VSIG)return;
+  VSIG=sig;
   if(ps.length<2){showPaper();$("cards").innerHTML='<div class="pcard pc1">'+frame(0,"#FF2D78")+
     '<div class="ct">no verdict</div><div class="cn">not enough confessions</div>'+
     '<div class="cd">The court needs at least two people who finished all twelve.</div></div>';return;}
@@ -820,13 +842,39 @@ function toVerdict(d){
   if(allies)cards.push({c:"pc4",col:"#FFB347",t:"unlikely allies",n:allies.pair[0]+" + "+allies.pair[1],
     d:'Alone together on <b>'+esc(allies.item)+'</b>, against the whole room. You two have something and did not know it.',doodle:"↖ besties"});
 
-  $("cards").innerHTML=cards.map(function(k,i){
+  var roster=ps.map(function(q){
+    var mine=0;
+    for(var i2=0;i2<DECK.length;i2++) if(q.answers[i2]===1) mine++;
+    var read = mine===DECK.length?"objects to existence"
+      : mine===0?"objects to nothing"
+      : mine>=DECK.length-2?"difficult"
+      : mine>=8?"hostile, with standards"
+      : mine>=5?"dangerously reasonable"
+      : mine>=3?"easygoing, suspicious"
+      : "will eat anything";
+    return {nm:q.name,av:q.av,ab:mine,drew:score[q.name]||0,read:read};
+  }).sort(function(a,b){return b.drew-a.drew||b.ab-a.ab;});
+
+  var rosterHtml='<div class="pcard pcAll">'+frame(9,"#7FA6C4")+
+    '<div class="ct">everyone on the record &middot; '+ps.length+' confessed</div>'+
+    '<div class="rlist">'+roster.map(function(r){
+      return '<div class="rrow'+(ME.name&&r.nm===ME.name?" me":"")+'">'+
+        avatar(r.av,30)+
+        '<div class="rn"><b>'+esc(r.nm)+'</b><span>'+r.read+'</span></div>'+
+        '<div class="rstat"><em>'+r.ab+'</em>objected</div>'+
+        '<div class="rstat"><em>'+r.drew+'</em>objections drawn</div>'+
+      '</div>';
+    }).join("")+'</div>'+
+    '<span class="doodle" style="right:14px;bottom:-8px;color:#7FA6C4;transform:rotate(-2deg)">the whole room &#8599;</span>'+
+  '</div>';
+
+  $("cards").innerHTML=rosterHtml+cards.map(function(k,i){
     return '<div class="pcard '+k.c+'">'+frame(i,k.col)+
       '<div class="ct">'+k.t+'</div><div class="cn">'+esc(k.n)+'</div><div class="cd">'+k.d+'</div>'+
       '<span class="doodle" style="right:14px;bottom:-8px;color:'+k.col+';transform:rotate('+((i%2)?2.5:-3)+'deg)">'+k.doodle+'</span>'+
       '</div>';
   }).join("");
-  showPaper();
+  if(!VRENDERED){VRENDERED=true;showPaper();}
 
   $("copy").onclick=function(){
     var txt="ABOMINATION — the verdict\n\nMost cursed: "+cursed+
