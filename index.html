@@ -67,6 +67,7 @@ body{color:var(--line);font-family:"JetBrains Mono",ui-monospace,Menlo,monospace
 .lede b{color:var(--line);font-weight:400}
 
 .lbl{font-size:10.5px;letter-spacing:.22em;color:var(--dimmer);margin:26px 0 10px;text-transform:uppercase}
+.lbl .opt{color:var(--teal);letter-spacing:.14em;margin-left:8px}
 input.t{width:100%;font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:24px;text-transform:uppercase;letter-spacing:.03em;color:var(--line);background:transparent;border:0;border-bottom:1px solid var(--dimmer);padding:6px 2px;outline:none}
 input.t:focus{border-bottom-color:var(--neon)}
 input.t::placeholder{color:var(--dimmer);text-transform:none;font-size:16px;letter-spacing:0}
@@ -236,9 +237,9 @@ body.paper canvas#field{display:none}
     <div class="lbl">your name</div>
     <input class="t" id="nm" maxlength="14" placeholder="what they call you" autocomplete="off">
 
-    <div class="lbl">room code</div>
-    <input class="t" id="rc" maxlength="8" placeholder="make one up, or type theirs" autocomplete="off">
-    <div class="codehint" style="margin-top:8px">Everyone who types the <b>same code</b> lands in the same room.</div>
+    <div class="lbl">your room <span class="opt">already made for you</span></div>
+    <input class="t" id="rc" maxlength="8" autocomplete="off">
+    <div class="codehint" style="margin-top:8px">Send that code or the link to anyone. Type a different one to walk into theirs.</div>
 
     <button class="go" id="enter">enter the room</button>
     <div class="err" id="e0"></div>
@@ -352,8 +353,8 @@ function post(act,body){
 /* ---------------- join ---------------- */
 $("enter").addEventListener("click",function(){
   var nm=$("nm").value.trim(), rc=$("rc").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(!nm){$("e0").textContent="the court needs a name";return;}
-  if(!rc){$("e0").textContent="pick a room code, any word";return;}
+  if(!nm){$("e0").textContent="the court needs a name";$("nm").focus();return;}
+  if(!rc){rc=newCode();$("rc").value=rc;}
   $("e0").textContent="";$("enter").disabled=true;
   ME.room=rc;
   post("join",{name:nm}).then(function(r){
@@ -368,12 +369,18 @@ $("enter").addEventListener("click",function(){
     showChat(true);show(1);startPoll();
   }).catch(function(){$("enter").disabled=false;$("e0").textContent="could not reach the room";});
 });
-$("nm").addEventListener("keydown",function(e){if(e.key==="Enter")$("rc").focus();});
+$("nm").addEventListener("keydown",function(ev){if(ev.code==="Enter")$("enter").click();});
 $("rc").addEventListener("keydown",function(e){if(e.key==="Enter")$("enter").click();});
+/* the room is made for you. no gate, no decision, no blank field. */
+var WORDS=["SOGGY","NUGGET","PULP","CRUMB","BRINE","GRISTLE","RIND","CURD",
+  "GLAZE","SLAW","MUSH","ZEST","BONELESS","PITH","SCALD","TEPID"];
+function newCode(){
+  return WORDS[Math.floor(Math.random()*WORDS.length)]+(10+Math.floor(Math.random()*89));
+}
 try{
   var h=(location.hash||"").replace("#","").toUpperCase().replace(/[^A-Z0-9]/g,"");
-  if(h)$("rc").value=h;
-}catch(e){}
+  $("rc").value=h||newCode();
+}catch(e){$("rc").value=newCode();}
 
 /* ---------------- polling ---------------- */
 function startPoll(){
