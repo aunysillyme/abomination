@@ -217,6 +217,72 @@ body.paper .wrap{display:none}
 body.paper #marks{opacity:0}
 body.paper canvas#field{display:none}
 </style>
+<style>
+/* --- THE ARCADE: same void, same eyes, now you are competing in it --- */
+.ahead{font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:clamp(40px,11vw,74px);text-transform:uppercase;line-height:.88;margin:0 0 8px}
+.ahead i{font-style:normal;font-weight:900;display:block;color:var(--teal);text-shadow:0 0 26px rgba(79,217,217,.45)}
+.asub{color:var(--dim);font-size:14px;line-height:1.7;margin:0 0 24px;max-width:48ch}
+
+.games{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:22px}
+@media(max-width:560px){.games{grid-template-columns:1fr}}
+button.gt{font-family:inherit;text-align:left;background:transparent;border:1px solid var(--dimmer);color:var(--dim);padding:13px 14px;cursor:pointer;display:block}
+button.gt h5{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:22px;text-transform:uppercase;letter-spacing:.05em;margin:0 0 3px;color:var(--line)}
+button.gt p{margin:0;font-size:11.5px;line-height:1.5;letter-spacing:.02em}
+button.gt .lead{margin-top:8px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dimmer)}
+button.gt .lead b{color:var(--teal);font-weight:400}
+button.gt:hover{border-color:var(--dim);color:var(--line)}
+button.gt.on{border-color:var(--neon);box-shadow:0 0 22px rgba(255,45,120,.16),inset 0 0 22px rgba(255,45,120,.05)}
+button.gt.on h5{color:var(--neon)}
+
+.gwrap{border:1px solid var(--dimmer);padding:16px;display:none}
+.gwrap.on{display:block}
+.gtop{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.gtop .gn{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:19px;text-transform:uppercase;letter-spacing:.06em;color:var(--line)}
+.gtop .gh{font-size:11.5px;color:var(--dimmer);letter-spacing:.04em}
+.gtop .gs{margin-left:auto;font-family:"Big Shoulders Display",sans-serif;font-weight:200;font-size:32px;line-height:1;color:var(--teal)}
+
+#snakeCv{display:block;width:100%;max-width:420px;margin:0 auto;background:transparent;border:1px solid var(--dimmer);touch-action:none}
+
+.pad{border:1px solid var(--dimmer);min-height:190px;display:flex;align-items:center;justify-content:center;text-align:center;cursor:pointer;user-select:none;-webkit-user-select:none;padding:20px;touch-action:manipulation}
+.pad .big{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(28px,7vw,46px);text-transform:uppercase;line-height:1;letter-spacing:.03em}
+.pad .sm{font-size:12px;color:var(--dimmer);letter-spacing:.14em;text-transform:uppercase;margin-top:10px}
+.pad.armed{border-color:var(--neon);box-shadow:inset 0 0 40px rgba(255,45,120,.10)}
+.pad.armed .big{color:var(--neon)}
+.pad.go{border-color:var(--toxic);background:rgba(79,255,168,.08);box-shadow:inset 0 0 60px rgba(79,255,168,.14)}
+.pad.go .big{color:var(--toxic)}
+
+.board{margin-top:14px;border-top:1px solid rgba(49,64,79,.5);padding-top:12px}
+.board h6{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dimmer);margin:0 0 9px;font-weight:400;font-family:inherit}
+.br{display:flex;align-items:center;gap:10px;font-size:13.5px;padding:5px 0;letter-spacing:.03em}
+.br .rk{color:var(--dimmer);font-size:11px;width:16px}
+.br .vv{margin-left:auto;font-family:"Big Shoulders Display",sans-serif;font-weight:400;font-size:19px;color:var(--line)}
+.br.top .vv{color:var(--teal)}
+.br.top{color:var(--teal)}
+.br.mine{color:var(--neon)}
+.br.mine .vv{color:var(--neon)}
+.gnote{font-size:11.5px;color:var(--dimmer);margin-top:10px;line-height:1.6}
+</style>
+<style>
+/* --- FACES + PRESENCE STRIP --- */
+.av{display:block;flex:none}
+#presence{display:none;position:fixed;left:0;right:0;bottom:0;z-index:5;
+  background:linear-gradient(to top,rgba(4,6,10,.97),rgba(4,6,10,.72) 70%,transparent);
+  padding:14px 16px 12px;pointer-events:none}
+#presence.on{display:block}
+body.paper #presence{display:none}
+.pstrip{max-width:1120px;margin:0 auto;display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start}
+.pf{display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;opacity:.55}
+.pf.done{opacity:1}
+.pf span{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dimmer);
+  max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pf.done span{color:var(--dim)}
+.pf.me span{color:var(--neon)}
+.pf.me .av{filter:drop-shadow(0 0 7px rgba(255,45,120,.55))}
+.stage{padding-bottom:110px}
+.pl .av{margin-right:2px}
+.m .who{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.m .who .nm{margin-bottom:0}
+</style>
 <canvas id="field"></canvas>
 
 <div class="wrap">
@@ -290,6 +356,28 @@ body.paper canvas#field{display:none}
     <button class="go" id="rNext">next crime</button>
   </div>
 
+  <!-- 4 . the arcade -->
+  <div class="screen" id="s4">
+    <div class="lbl" style="margin-top:0">the arcade</div>
+    <h2 class="ahead">settle it<i>properly</i></h2>
+    <p class="asub">You know each other's crimes now. Three games, everyone at once, one board. The judge is keeping score.</p>
+    <div class="games" id="games"></div>
+    <div class="gwrap" id="gwrap">
+      <div class="gtop">
+        <span class="gn" id="gName">-</span>
+        <span class="gh" id="gHow">-</span>
+        <span class="gs" id="gScore"></span>
+      </div>
+      <div id="snakeBox" style="display:none"><canvas id="snakeCv" width="340" height="340"></canvas></div>
+      <div id="padBox" style="display:none">
+        <div class="pad" id="pad"><div><div class="big" id="padBig">hold</div><div class="sm" id="padSm">-</div></div></div>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="gnote">Your best score per game is what sticks. Everyone sees the board update live.</div>
+    </div>
+    <div class="stack"><button class="ghost" id="backPaper">back to the verdict</button></div>
+  </div>
+
 </div>
 
 <!-- the chat column -->
@@ -311,11 +399,14 @@ body.paper canvas#field{display:none}
 </div>
 </div>
 
+<div id="presence"></div>
+
 <div class="sheet paperwrap" id="paperSheet">
   <h1 class="ph">the<i>verdict</i></h1>
   <p class="psub" id="psub">what twelve arguments actually told you</p>
   <div id="cards"></div>
   <div class="stack">
+    <button class="ghost" id="toArcade">to the arcade</button>
     <button class="ghost" id="again">new trial</button>
     <button class="ghost" id="copy">copy the verdict</button>
   </div>
@@ -331,7 +422,7 @@ var SEEN=0, POLL=null, LAST={phase:"lobby",crime:0,players:[]}, DEMO=false;
 
 /* ---------------- screens ---------------- */
 function show(n){
-  ["s0","s1","s2","s3"].forEach(function(id,i){
+  ["s0","s1","s2","s3","s4"].forEach(function(id,i){
     $(id).className="screen"+(i===n?" on":"");
   });
   window.scrollTo(0,0);
@@ -397,6 +488,9 @@ function paint(d){
   var prevPhase=LAST.phase, prevCrime=LAST.crime;
   LAST=d;
 
+  if(d.scores){SCORES=d.scores;if(GCUR){drawBoard(GCUR);drawTiles();}}
+  drawPresence(d.players);
+
   /* roster */
   $("chCount").textContent=d.players.length;
   var doneN=0;
@@ -404,7 +498,7 @@ function paint(d){
     if(p.done)doneN++;
     var st=p.done?'<span class="st done">confessed</span>'
       :'<span class="st">'+(p.at?("crime "+p.at+" of 12"):"not started")+'</span>';
-    return '<div class="pl'+(p.id===ME.id?" me":"")+'"><span class="dot'+(p.done?" on":"")+'"></span>'+esc(p.name)+st+'</div>';
+    return '<div class="pl'+(p.id===ME.id?" me":"")+'">'+avatar(p.av,22)+'<span class="dot'+(p.done?" on":"")+'"></span>'+esc(p.name)+st+'</div>';
   }).join("")||'<div class="pl"><span class="dot"></span>nobody yet</div>';
   $("lobbyH").textContent=d.players.length+" present · "+doneN+" confessed";
   $("begin").disabled=doneN<2;
@@ -427,7 +521,12 @@ function paint(d){
         var you=ME.name&&n.toUpperCase()===ME.name.toUpperCase();
         return '<span class="at'+(you?" you":"")+'">@'+n+'</span>';
       });
-      div.innerHTML=(m.kind==="sys"?"":'<div class="nm">'+esc(m.from)+'</div>')+'<div class="bd">'+body+'</div>';
+      var who="";
+      if(m.kind==="say"){
+        var sp2=(LAST.players||[]).filter(function(q){return q.name===m.from;})[0];
+        who='<div class="who">'+(sp2?avatar(sp2.av,20):"")+'<div class="nm">'+esc(m.from)+'</div></div>';
+      }else if(m.kind==="judge"){ who='<div class="nm">'+esc(m.from)+'</div>'; }
+      div.innerHTML=who+'<div class="bd">'+body+'</div>';
       log.appendChild(div);
       if(m.kind==="judge")FIELD.jolt=1;
     });
@@ -524,7 +623,7 @@ $("demo").addEventListener("click",function(){
     DEE:[1,1,1,1,1,1,1,1,0,1,0,1]};
   var players=names.map(function(n){
     var o={};A[n].forEach(function(v,i){o[i]=v;});
-    return {id:n,name:n,done:true,at:12,answers:o};
+    return {id:n,name:n,done:true,at:12,answers:o,av:(names.indexOf(n)*5)%24};
   });
   toVerdict({phase:"over",players:players});
 });
@@ -596,6 +695,277 @@ function toVerdict(d){
 }
 $("again").addEventListener("click",function(){location.hash="";location.reload();});
 </script>
+<script>
+/* ================= FACES =================
+   Nobody picks their face. It is assigned, like the verdict.
+   Drawn from parts so 24 of them cost almost nothing. */
+var AVC=["#FF2D78","#4FD9D9","#4FFFA8","#7FA6C4","#E8F4FF","#E0357B"];
+var EYES=[
+  '<circle cx="9" cy="13" r="2.1" fill="C"/><circle cx="17" cy="13" r="2.1" fill="C"/>',
+  '<path d="M7 13.5 L11 13.5 M15 13.5 L19 13.5" stroke="C" stroke-width="1.8" stroke-linecap="round"/>',
+  '<path d="M7.4 14.6 Q9.2 11.4 11 14.6 M15 14.6 Q16.8 11.4 18.6 14.6" stroke="C" stroke-width="1.6" fill="none" stroke-linecap="round"/>',
+  '<circle cx="9" cy="13" r="3" fill="none" stroke="C" stroke-width="1.3"/><circle cx="9" cy="13.7" r="1.3" fill="C"/><circle cx="17" cy="13" r="3" fill="none" stroke="C" stroke-width="1.3"/><circle cx="17" cy="13.7" r="1.3" fill="C"/>',
+  '<path d="M6.4 11.6 L11.6 14.4 M6.4 14.4 L11.6 11.6 M14.4 11.6 L19.6 14.4 M14.4 14.4 L19.6 11.6" stroke="C" stroke-width="1.5" stroke-linecap="round"/>',
+  '<circle cx="9" cy="13" r="2.1" fill="C"/><path d="M14.6 13.4 Q17 10.6 19.4 13.4" stroke="C" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+];
+var MOUTH=[
+  '<path d="M8.6 18.4 Q13 22.4 17.4 18.4" stroke="C" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
+  '<path d="M8.6 20.6 Q13 16.8 17.4 20.6" stroke="C" stroke-width="1.7" fill="none" stroke-linecap="round"/>',
+  '<ellipse cx="13" cy="19.6" rx="3" ry="3.4" fill="C"/>',
+  '<path d="M8.4 19.4 L17.6 19.4" stroke="C" stroke-width="1.8" stroke-linecap="round"/>',
+  '<path d="M8.4 18.6 L11 20.8 L13.6 18.6 L16.2 20.8 L18 18.9" stroke="C" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+  '<path d="M9 18.2 Q13 23 17 18.2 Z" fill="none" stroke="C" stroke-width="1.6" stroke-linejoin="round"/><path d="M10 20.6 L16 20.6" stroke="C" stroke-width="1.2"/>'
+];
+var HAT=[
+  '<path d="M13 2.6 L13 6.2" stroke="C" stroke-width="1.5" stroke-linecap="round"/><circle cx="13" cy="1.9" r="1.5" fill="C"/>',
+  '<path d="M6.8 6.6 L9.6 2.8 M19.2 6.6 L16.4 2.8" stroke="C" stroke-width="1.5" stroke-linecap="round"/>',
+  '<path d="M5.6 6 Q13 -0.6 20.4 6" stroke="C" stroke-width="1.5" fill="none" stroke-linecap="round"/>',
+  '<path d="M9 4.6 L13 1.4 L17 4.6" stroke="C" stroke-width="1.5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>',
+  '',
+  '<circle cx="5.2" cy="9.4" r="1.5" fill="none" stroke="C" stroke-width="1.2"/><circle cx="20.8" cy="9.4" r="1.5" fill="none" stroke="C" stroke-width="1.2"/>'
+];
+function avatar(i,size){
+  i=(i|0)%24; if(i<0)i=0;
+  var col=AVC[i%AVC.length];
+  var e=EYES[i%EYES.length], m=MOUTH[(i+2)%MOUTH.length], h=HAT[(i+4)%HAT.length];
+  var s=size||30;
+  return '<svg class="av" width="'+s+'" height="'+s+'" viewBox="0 0 26 26" aria-hidden="true">'+
+    '<circle cx="13" cy="14.6" r="10.4" fill="none" stroke="'+col+'" stroke-width="1.25" opacity=".85"/>'+
+    (h?h.replace(/C/g,col):'')+e.replace(/C/g,col)+m.replace(/C/g,col)+'</svg>';
+}
+
+/* the presence strip: who is in the void with you */
+function drawPresence(players){
+  var host=$("presence"); if(!host)return;
+  if(!players||!players.length){host.classList.remove("on");host.innerHTML="";return;}
+  host.classList.add("on");
+  var key=players.map(function(p){return p.name+p.av+(p.done?1:0);}).join("|");
+  if(host.dataset.k===key)return;
+  host.dataset.k=key;
+  host.innerHTML='<div class="pstrip">'+players.map(function(p){
+    return '<div class="pf'+(p.id===ME.id?" me":"")+(p.done?" done":"")+'" title="'+esc(p.name)+'">'+
+      avatar(p.av,34)+'<span>'+esc(p.name)+'</span></div>';
+  }).join("")+'</div>';
+}
+
+/* ================= THE ARCADE ================= */
+var SCORES={}, GCUR=null;
+var GMETA={
+  snake:{label:"SNAKE",low:false,unit:"",blurb:"Eat. Do not turn into yourself.",how:"arrows, wasd or swipe"},
+  nerve:{label:"NERVE",low:true,unit:"s",blurb:"Hold, then let go at exactly ten seconds. No clock.",how:"hold space or hold the pad"},
+  reflex:{label:"REFLEX",low:true,unit:"ms",blurb:"Wait for green. Do not jump early.",how:"tap or hit space"}
+};
+function gfmt(g,v){return (g==="nerve"?(v/1000).toFixed(2):String(Math.round(v)))+GMETA[g].unit;}
+function leader(g){
+  var b=SCORES[g]; if(!b)return null;
+  var lo=GMETA[g].low, best=null;
+  Object.keys(b).forEach(function(nm){
+    var v=b[nm]; if(!best||(lo?v<best.v:v>best.v))best={nm:nm,v:v};
+  });
+  return best;
+}
+function submitScore(g,v){
+  if(!ME.id)return;
+  post("score",{id:ME.id,game:g,value:v}).then(function(r){
+    if(r&&r.board){SCORES[g]=r.board;drawBoard(g);drawTiles();}
+    pull();
+  });
+}
+function drawTiles(){
+  var host=$("games"); if(!host)return;
+  host.innerHTML=Object.keys(GMETA).map(function(g){
+    var m=GMETA[g], l=leader(g);
+    return '<button class="gt'+(GCUR===g?" on":"")+'" data-g="'+g+'">'+
+      '<h5>'+m.label+'</h5><p>'+m.blurb+'</p>'+
+      '<div class="lead">'+(l?('leader <b>'+esc(l.nm)+'</b> '+gfmt(g,l.v)):'nobody yet')+'</div></button>';
+  }).join("");
+}
+function drawBoard(g){
+  var host=$("board"); if(!host||!g)return;
+  var b=SCORES[g]||{}, lo=GMETA[g].low;
+  var rows=Object.keys(b).map(function(nm){return {nm:nm,v:b[nm]};})
+    .sort(function(a,c){return lo?a.v-c.v:c.v-a.v;});
+  host.innerHTML='<h6>'+GMETA[g].label+' standings</h6>'+(rows.length?rows.map(function(r,i){
+    return '<div class="br'+(i===0?" top":"")+(ME.name&&r.nm===ME.name?" mine":"")+'">'+
+      '<span class="rk">'+(i+1)+'</span>'+esc(r.nm)+'<span class="vv">'+gfmt(g,r.v)+'</span></div>';
+  }).join(""):'<div class="br"><span class="rk">-</span>no scores yet</div>');
+}
+function openGame(g){
+  GCUR=g;drawTiles();
+  $("gwrap").classList.add("on");
+  $("gName").textContent=GMETA[g].label;
+  $("gHow").textContent=GMETA[g].how;
+  $("gScore").textContent="";
+  ["snakeBox","padBox"].forEach(function(id){$(id).style.display="none";});
+  stopSnake();
+  if(g==="snake"){$("snakeBox").style.display="block";startSnake();}
+  else{$("padBox").style.display="block";resetPad(g);}
+  drawBoard(g);
+}
+
+/* ---- SNAKE ---- */
+var SN=null;
+function stopSnake(){ if(SN&&SN.t){clearInterval(SN.t);SN.t=null;} }
+function startSnake(){
+  var cv=$("snakeCv"), c=cv.getContext("2d"), N=17, px=cv.width/N;
+  SN={g:[{x:8,y:8}],d:{x:1,y:0},nd:{x:1,y:0},f:{x:12,y:8},s:0,t:null,dead:false};
+  function food(){
+    var ok=false,p;
+    while(!ok){p={x:(Math.random()*N)|0,y:(Math.random()*N)|0};
+      ok=!SN.g.some(function(q){return q.x===p.x&&q.y===p.y;});}
+    SN.f=p;
+  }
+  food();
+  function step(){
+    SN.d=SN.nd;
+    var h={x:SN.g[0].x+SN.d.x,y:SN.g[0].y+SN.d.y};
+    if(h.x<0||h.y<0||h.x>=N||h.y>=N||SN.g.some(function(q){return q.x===h.x&&q.y===h.y;})){
+      SN.dead=true;stopSnake();
+      $("gScore").textContent=SN.s;
+      if(SN.s>0)submitScore("snake",SN.s);
+      draw();
+      c.fillStyle="rgba(4,6,10,.78)";c.fillRect(0,0,cv.width,cv.height);
+      c.fillStyle="#FF2D78";c.font="900 26px 'Big Shoulders Display',sans-serif";c.textAlign="center";
+      c.fillText("YOU ATE YOURSELF",cv.width/2,cv.height/2-4);
+      c.fillStyle="#5C7086";c.font="12px 'JetBrains Mono',monospace";
+      c.fillText("score "+SN.s+" - tap to go again",cv.width/2,cv.height/2+18);
+      return;
+    }
+    SN.g.unshift(h);
+    if(h.x===SN.f.x&&h.y===SN.f.y){SN.s++;$("gScore").textContent=SN.s;food();}
+    else SN.g.pop();
+    draw();
+  }
+  function draw(){
+    c.clearRect(0,0,cv.width,cv.height);
+    c.strokeStyle="rgba(255,45,120,.85)";c.lineWidth=1.4;
+    var f=SN.f;
+    c.beginPath();c.arc(f.x*px+px/2,f.y*px+px/2,px*.30,0,6.283);c.stroke();
+    c.beginPath();c.arc(f.x*px+px/2,f.y*px+px/2,px*.12,0,6.283);
+    c.fillStyle="rgba(255,45,120,.85)";c.fill();
+    SN.g.forEach(function(q,i){
+      var a=i===0?1:Math.max(.22,1-i*.055);
+      c.fillStyle="rgba(232,244,255,"+a.toFixed(3)+")";
+      c.fillRect(q.x*px+1.5,q.y*px+1.5,px-3,px-3);
+    });
+  }
+  draw();
+  $("gScore").textContent="0";
+  SN.t=setInterval(step,118);
+}
+function turn(x,y){
+  if(!SN||SN.dead)return;
+  if(SN.d.x===-x&&SN.d.y===-y)return;
+  SN.nd={x:x,y:y};
+}
+document.addEventListener("keydown",function(ev){
+  if(GCUR!=="snake"||!SN)return;
+  var k=ev.code;
+  if(k==="ArrowUp"||k==="KeyW"){turn(0,-1);ev.preventDefault();}
+  else if(k==="ArrowDown"||k==="KeyS"){turn(0,1);ev.preventDefault();}
+  else if(k==="ArrowLeft"||k==="KeyA"){turn(-1,0);ev.preventDefault();}
+  else if(k==="ArrowRight"||k==="KeyD"){turn(1,0);ev.preventDefault();}
+});
+(function(){
+  var cv=$("snakeCv"); if(!cv)return;
+  var sx=0,sy=0;
+  cv.addEventListener("touchstart",function(ev){
+    var t=ev.touches[0];sx=t.clientX;sy=t.clientY;
+  },{passive:true});
+  cv.addEventListener("touchend",function(ev){
+    var t=ev.changedTouches[0],dx=t.clientX-sx,dy=t.clientY-sy;
+    if(Math.abs(dx)<18&&Math.abs(dy)<18){if(SN&&SN.dead)startSnake();return;}
+    if(Math.abs(dx)>Math.abs(dy))turn(dx>0?1:-1,0);else turn(0,dy>0?1:-1);
+  },{passive:true});
+  cv.addEventListener("click",function(){if(SN&&SN.dead)startSnake();});
+})();
+
+/* ---- NERVE + REFLEX share one pad ---- */
+var PAD={mode:null,state:"idle",t0:0,timer:null};
+function padSet(cls,big,sm){
+  var p=$("pad");
+  p.className="pad"+(cls?" "+cls:"");
+  $("padBig").textContent=big;
+  $("padSm").textContent=sm;
+}
+function resetPad(g){
+  PAD.mode=g;PAD.state="idle";
+  if(PAD.timer){clearTimeout(PAD.timer);PAD.timer=null;}
+  if(g==="nerve")padSet("","hold","press and hold, let go at ten seconds");
+  else padSet("","start","tap, then wait for green");
+}
+function padDown(){
+  var g=PAD.mode;
+  if(g==="nerve"){
+    if(PAD.state==="idle"||PAD.state==="done"){
+      PAD.state="holding";PAD.t0=performance.now();
+      padSet("armed","holding","let go at exactly ten");
+    }
+    return;
+  }
+  if(g==="reflex"){
+    if(PAD.state==="idle"||PAD.state==="done"){
+      PAD.state="waiting";
+      padSet("armed","wait","do not jump");
+      PAD.timer=setTimeout(function(){
+        PAD.state="go";PAD.t0=performance.now();
+        padSet("go","now","tap");
+      },1400+Math.random()*3200);
+    }else if(PAD.state==="waiting"){
+      clearTimeout(PAD.timer);PAD.state="done";
+      padSet("","too early","you jumped. tap to try again");
+    }else if(PAD.state==="go"){
+      var ms=performance.now()-PAD.t0;PAD.state="done";
+      padSet("",""+Math.round(ms)+"ms","tap to go again");
+      $("gScore").textContent=Math.round(ms);
+      submitScore("reflex",ms);
+    }
+  }
+}
+function padUp(){
+  if(PAD.mode!=="nerve"||PAD.state!=="holding")return;
+  var ms=performance.now()-PAD.t0, off=Math.abs(ms-10000);
+  PAD.state="done";
+  var s=(ms/1000).toFixed(2);
+  padSet("", s+"s", (off<250?"scarily close":(ms<10000?"early by ":"late by ")+(off/1000).toFixed(2)+"s")+" - hold again");
+  $("gScore").textContent=(off/1000).toFixed(2);
+  submitScore("nerve",off);
+}
+(function(){
+  var p=$("pad"); if(!p)return;
+  p.addEventListener("mousedown",function(ev){ev.preventDefault();padDown();});
+  p.addEventListener("mouseup",padUp);
+  p.addEventListener("mouseleave",function(){if(PAD.state==="holding")padUp();});
+  p.addEventListener("touchstart",function(ev){ev.preventDefault();padDown();},{passive:false});
+  p.addEventListener("touchend",function(ev){ev.preventDefault();padUp();},{passive:false});
+  document.addEventListener("keydown",function(ev){
+    if(ev.code!=="Space"||GCUR==="snake"||!GCUR)return;
+    if(ev.repeat){ev.preventDefault();return;}
+    ev.preventDefault();padDown();
+  });
+  document.addEventListener("keyup",function(ev){
+    if(ev.code!=="Space"||GCUR==="snake"||!GCUR)return;
+    ev.preventDefault();padUp();
+  });
+})();
+
+$("games").addEventListener("click",function(ev){
+  var b=ev.target.closest("[data-g]"); if(!b)return;
+  openGame(b.dataset.g);
+});
+$("toArcade").addEventListener("click",function(){
+  document.body.classList.remove("paper");
+  FIELD.mode="watch";FIELD.intensity=.42;
+  showChat(true);show(4);
+  drawTiles();if(!GCUR)openGame("snake");
+  if(!POLL)startPoll();
+});
+$("backPaper").addEventListener("click",function(){
+  stopSnake();document.body.classList.add("paper");FIELD.mode="calm";
+});
+drawTiles();
+</script>
+
 <script>
 /* ---------- THE FIELD ----------
    Negative Space: a void with points of light.
