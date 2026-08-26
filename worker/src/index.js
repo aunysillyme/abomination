@@ -23,6 +23,22 @@ const GAMES = {
 
 const fmt = (g, v) => (g === "nerve" ? (v / 1000).toFixed(2) : String(Math.round(v))) + GAMES[g].unit;
 
+const VOICE = [
+  "You are THE JUDGE, the host of a party game called Abomination where friends",
+  "confess petty food opinions and then argue about them.",
+  "You are dry, quick and a bit cruel, like a courtroom judge who finds everyone",
+  "faintly ridiculous. You are never cheerful and never a helpful assistant.",
+  "",
+  "RULES:",
+  "- Reply in ONE or TWO short sentences. Never more. No lists, no preamble.",
+  "- Use the real vote data you are given. Never invent a vote, a name or a number.",
+  "- Address people by @NAME when you mean them.",
+  "- Be funny about the OPINION, not about anyone's body, identity or life.",
+  "- Never break character, never mention being an AI, never explain yourself.",
+  "- If asked something you have no data for, deflect with a joke instead of guessing.",
+  "- No emoji. No hashtags. No stage directions."
+].join("\n");
+
 const CORS = {
   "access-control-allow-origin": "*",
   "access-control-allow-methods": "GET,POST,OPTIONS",
@@ -140,6 +156,79 @@ export class Room extends DurableObject {
       this.push("JUDGE", "Nobody else is here to be wrong at. Send them the room code.", "judge");
     } else if (ready >= 2 && this.s.players.every((x) => x.done)) {
       this.push("JUDGE", "That is everyone. Begin the trial when you are ready to lose friends.", "judge");
+    }
+  }
+
+  async judgeAI(asker, text, direct) {
+    const s = this.s;
+    const E = this.env;
+    if (!E || !E.AI) return null;
+
+    s.ai = s.ai || { n: 0, last: 0 };
+    const now = Date.now();
+    if (s.ai.n >= 300) return null;
+    if (!direct && now - s.ai.last < 9000) return null;
+    if (direct && now - s.ai.last < 250) return null;
+    s.ai.n += 1;
+    s.ai.last = now;
+
+    const facts = [];
+    const me = s.players.find((p) => p.name === asker);
+    if (me) {
+      let ab = 0;
+      for (let i = 0; i < DECK.length; i++) if (me.answers[i] === 1) ab += 1;
+      facts.push(asker + " called " + ab + " of " + DECK.length + " an abomination.");
+    }
+    if (s.phase === "trial") {
+      const c = DECK[s.crime], t = this.tally(s.crime);
+      facts.push("Current crime on trial: " + c.t + " (" + c.s + ").");
+      facts.push("Voted abomination: " + (t.ab.join(", ") || "nobody") + ".");
+      facts.push("Voted perfectly fine: " + (t.fi.join(", ") || "nobody") + ".");
+    } else if (s.phase === "lobby") {
+      const done = s.players.filter((p) => p.done).map((p) => p.name);
+      const wait = s.players.filter((p) => !p.done).map((p) => p.name);
+      facts.push("The trial has not started. Every confession is sealed, so reveal nobody's votes.");
+      facts.push("Finished confessing: " + (done.join(", ") || "nobody") + ".");
+      facts.push("Still confessing: " + (wait.join(", ") || "nobody") + ".");
+    } else {
+      facts.push("The trial is over. All twelve crimes have been read out.");
+      Object.keys(GAMES).forEach((g) => {
+        const l = this.leaderOf(g);
+        if (l) facts.push(GAMES[g].label + " leader: " + l.name + " at " + fmt(g, l.value) + ".");
+      });
+    }
+    facts.push("People in the room: " + s.players.map((p) => p.name).join(", ") + ".");
+
+    const recent = s.msgs.slice(-8)
+      .filter((m) => m.kind === "say" || m.kind === "judge")
+      .map((m) => (m.kind === "judge" ? "THE JUDGE" : m.from) + ": " + m.body)
+      .join("\n");
+
+    try {
+      const out = await E.AI.run("@cf/meta/llama-3.1-8b-instruct-fast", {
+        max_tokens: 90,
+        temperature: 0.85,
+        messages: [
+          { role: "system", content: VOICE + "\n\nFACTS YOU KNOW:\n" + facts.join("\n") },
+          { role: "user", content: "Recent chat:\n" + recent + "\n\n" + asker + " just said to you: " + text + "\n\nReply as THE JUDGE." }
+        ]
+      });
+      let r = "";
+      if (out) {
+        if (typeof out.response === "string") r = out.response;
+        else if (out.choices && out.choices[0] && out.choices[0].message &&
+                 typeof out.choices[0].message.content === "string") {
+          r = out.choices[0].message.content;
+        } else if (typeof out.result === "string") r = out.result;
+      }
+      r = r + "";
+      r = r.replace(/^[\"'\s]+|[\"'\s]+$/g, "").replace(/\s+/g, " ").trim();
+      if (r.length > 240) r = r.slice(0, 237).replace(/\s\S*$/, "") + ".";
+      if (r.length < 3) return null;
+      return r;
+    } catch (e) {
+      this.lastAiError = (e && (e.message || e.name)) || String(e);
+      return null;
     }
   }
 
@@ -273,7 +362,22 @@ export class Room extends DurableObject {
       const text = clean(b.text, 240);
       if (!text) return json({ error: "empty" }, 400);
       this.push(p.name, text, "say");
-      if (/@judge\b/i.test(text)) this.judgeReply(p.name, text);
+
+      if (/@judge\b/i.test(text)) {
+        const said = await this.judgeAI(p.name, text, true);
+        if (said) this.push("JUDGE", said, "judge");
+        else this.judgeReply(p.name, text);
+      } else if (s.msgs.length > 4) {
+        /* it is listening even when nobody asked it to */
+        const tail = s.msgs.slice(-6);
+        const chatter = tail.filter((m) => m.kind === "say").length;
+        const spokeRecently = tail.some((m) => m.kind === "judge");
+        if (chatter >= 4 && !spokeRecently) {
+          const butt = await this.judgeAI(p.name, text, false);
+          if (butt) this.push("JUDGE", butt, "judge");
+        }
+      }
+
       await this.save();
       return json({ ok: true });
     }
