@@ -160,6 +160,9 @@ body{overflow-y:auto}
 .col{min-width:0}
 
 .code{font-family:"Big Shoulders Display",sans-serif;font-weight:900;font-size:clamp(44px,10vw,72px);letter-spacing:.16em;color:var(--teal);text-shadow:0 0 30px rgba(79,217,217,.45);line-height:1;margin:4px 0 2px;word-break:break-all}
+.sharenow{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--teal);
+  letter-spacing:.02em;word-break:break-all;margin-top:6px;
+  border-left:2px solid var(--teal);padding-left:10px;line-height:1.6}
 .codehint{font-size:11.5px;letter-spacing:.14em;color:var(--dimmer);text-transform:uppercase;margin-bottom:8px}
 .codehint b{color:var(--steel)}
 
@@ -305,7 +308,9 @@ body.paper #presence{display:none}
 
     <div class="lbl">your room <span class="opt">already made for you</span></div>
     <input class="t" id="rc" maxlength="8" autocomplete="off">
-    <div class="codehint" style="margin-top:8px">Send that code or the link to anyone. Type a different one to walk into theirs.</div>
+    <div class="codehint" style="margin-top:10px">Send this exact link and they land in <b>your</b> room:</div>
+    <div class="sharenow" id="shareNow"></div>
+    <div class="codehint" style="margin-top:8px">Or type someone else's code above to walk into theirs.</div>
 
     <button class="go" id="enter">enter the room</button>
     <div class="err" id="e0"></div>
@@ -323,6 +328,7 @@ body.paper #presence{display:none}
       <div id="plist"></div>
     </div>
 
+    <button class="ghost" id="copyLink" style="width:100%;padding:13px;margin-bottom:4px">copy the invite link</button>
     <button class="go" id="toConfess">confess my crimes</button>
     <button class="go sm" id="begin">begin the trial</button>
     <div class="err" id="e1"></div>
@@ -454,7 +460,8 @@ $("enter").addEventListener("click",function(){
     ME.id=r.id;ME.name=r.name;DECK=r.deck;
     try{location.hash=rc;}catch(e){}
     $("codeBig").textContent=rc;
-    $("codeUrl").innerHTML="everyone opens <b>"+esc(location.host+location.pathname)+"</b> and types it";
+    $("codeUrl").innerHTML="send them <b>"+esc(location.host+location.pathname)+"#"+esc(rc)+"</b>";
+    setRoomInUrl(rc);
     $("chTitle").textContent="room "+rc;
     $("brandTag").textContent="room "+rc;
     showChat(true);show(1);startPoll();
@@ -468,10 +475,27 @@ var WORDS=["SOGGY","NUGGET","PULP","CRUMB","BRINE","GRISTLE","RIND","CURD",
 function newCode(){
   return WORDS[Math.floor(Math.random()*WORDS.length)]+(10+Math.floor(Math.random()*89));
 }
+function setRoomInUrl(c){
+  try{ if(c) history.replaceState(null,"","#"+c); }catch(e){ try{location.hash=c;}catch(e2){} }
+}
+function inviteUrl(){
+  return location.origin+location.pathname+"#"+
+    ($("rc").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"")||"");
+}
 try{
   var h=(location.hash||"").replace("#","").toUpperCase().replace(/[^A-Z0-9]/g,"");
-  $("rc").value=h||newCode();
-}catch(e){$("rc").value=newCode();}
+  var start=h||newCode();
+  $("rc").value=start;
+  setRoomInUrl(start);
+}catch(e){ $("rc").value=newCode(); }
+
+/* type a different code and the invite link follows you */
+$("rc").addEventListener("input",function(){
+  var v=$("rc").value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if(v)setRoomInUrl(v);
+  $("shareNow").textContent=v?inviteUrl().replace(/^https?:\/\//,""):"";
+});
+$("shareNow").textContent=inviteUrl().replace(/^https?:\/\//,"");
 
 /* ---------------- polling ---------------- */
 function startPoll(){
@@ -552,6 +576,14 @@ function send(){
 }
 $("csend").addEventListener("click",send);
 $("cin").addEventListener("keydown",function(e){if(e.key==="Enter")send();});
+$("copyLink").addEventListener("click",function(){
+  var url=location.origin+location.pathname+"#"+(ME.room||"");
+  var b=$("copyLink");
+  navigator.clipboard.writeText(url).then(
+    function(){b.textContent="copied - now paste it to them";},
+    function(){b.textContent=url;}
+  );
+});
 $("chips").addEventListener("click",function(e){
   var b=e.target.closest("[data-at]");if(!b)return;
   var i=$("cin");i.value=(i.value.replace(/\s+$/,"")+" @"+b.dataset.at+" ").replace(/^\s+/,"");i.focus();
